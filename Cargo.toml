@@ -1,10 +1,13 @@
 [package]
 name = "alphavantage"
 version = "0.1.0"
-description = "Alpha Vantage client"
+description = "Alpha Vantage API client"
 authors = ["António Marques <me@antoniomarques.eu>"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/asmarques/alphavantage"
+readme = "README.md"
+keywords = ["finance", "stocks", "alpha", "vantage"]
+categories = ["api-bindings", "web-programming::http-client"]
 
 [dependencies]
 serde = "1.0"
