@@ -69,7 +69,6 @@ impl Client {
     ) -> Result<reqwest::Response, reqwest::Error> {
         let mut query = vec![("function", function), ("apikey", &self.key)];
         query.extend(params);
-        println!("{:#?}", query);
         self.client.get(URL_ENDPOINT).query(&query).send()
     }
 }
