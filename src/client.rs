@@ -26,7 +26,7 @@ impl Client {
         symbol: &str,
         interval: time_series::IntradayInterval,
     ) -> Result<time_series::TimeSeries, Error> {
-        let function = time_series::Function::IntraDay(interval.clone());
+        let function = time_series::Function::IntraDay(interval);
         self.get_time_series(&function, symbol)
     }
 

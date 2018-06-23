@@ -6,7 +6,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::io::Read;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 /// Represents the interval for an intraday time series.
 pub enum IntradayInterval {
     /// 1 minute.
@@ -22,7 +22,7 @@ pub enum IntradayInterval {
 }
 
 impl IntradayInterval {
-    pub(crate) fn to_string(&self) -> &'static str {
+    pub(crate) fn to_string(self) -> &'static str {
         use self::IntradayInterval::*;
         match self {
             OneMinute => "1min",
