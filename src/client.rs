@@ -37,13 +37,13 @@ impl Client {
         self.get_time_series(&function, symbol)
     }
 
-    /// Retrieve weekly time series for the specified `symbol` including up to 20 years of historical data..
+    /// Retrieve weekly time series for the specified `symbol` including up to 20 years of historical data.
     pub fn get_time_series_weekly(&self, symbol: &str) -> Result<time_series::TimeSeries, Error> {
         let function = time_series::Function::Weekly;
         self.get_time_series(&function, symbol)
     }
 
-    /// Retrieve montly time series for the specified `symbol` including up to 20 years of historical data..
+    /// Retrieve montly time series for the specified `symbol` including up to 20 years of historical data.
     pub fn get_time_series_montly(&self, symbol: &str) -> Result<time_series::TimeSeries, Error> {
         let function = time_series::Function::Monthly;
         self.get_time_series(&function, symbol)
