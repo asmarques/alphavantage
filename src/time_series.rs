@@ -54,6 +54,11 @@ impl TimeSeries {
     pub fn len(&self) -> usize {
         self.entries.len()
     }
+
+    /// Returns `true` if the time series is empty.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
 }
 
 /// Represents a set of values for an equity for a given period in the time series.
