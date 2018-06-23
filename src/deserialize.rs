@@ -3,7 +3,7 @@ use serde::de::{self, Deserialize, Deserializer};
 use std::fmt::Display;
 use std::str::FromStr;
 
-pub(crate) const DATETIME_FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
+pub(crate) const DATETIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
 pub(crate) fn from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
