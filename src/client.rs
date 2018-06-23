@@ -1,3 +1,4 @@
+use exchange_rate;
 use failure::Error;
 use reqwest;
 use time_series;
@@ -46,6 +47,23 @@ impl Client {
     pub fn get_time_series_montly(&self, symbol: &str) -> Result<time_series::TimeSeries, Error> {
         let function = time_series::Function::Monthly;
         self.get_time_series(&function, symbol)
+    }
+
+    /// Retrieve the exchange rate from the currency specified by `from_currency_code` to the
+    /// currency specified by `to_currency_code`.
+    pub fn get_exchange_rate(
+        &self,
+        from_currency_code: &str,
+        to_currency_code: &str,
+    ) -> Result<exchange_rate::ExchangeRate, Error> {
+        let function = "CURRENCY_EXCHANGE_RATE";
+        let params = vec![
+            ("from_currency", from_currency_code),
+            ("to_currency", to_currency_code),
+        ];
+        let response = self.api_call(function, &params)?;
+        let result = exchange_rate::parser::parse(response)?;
+        Ok(result)
     }
 
     fn get_time_series(
