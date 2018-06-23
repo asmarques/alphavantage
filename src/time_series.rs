@@ -1,10 +1,5 @@
 use deserialize::from_str;
-use failure::err_msg;
-use failure::Error;
-use serde_json;
-use serde_json::Value;
 use std::collections::HashMap;
-use std::io::Read;
 
 #[derive(Debug, Clone, Copy)]
 /// Represents the interval for an intraday time series.
@@ -101,22 +96,30 @@ impl Function {
     }
 }
 
-pub(crate) fn parse(function: &Function, reader: impl Read) -> Result<TimeSeries, Error> {
-    let mut object: Value = serde_json::from_reader(reader)?;
-    let time_series_key = match function {
-        Function::IntraDay(interval) => format!("Time Series ({})", interval.to_string()),
-        Function::Daily => "Time Series (Daily)".to_string(),
-        Function::Weekly => "Weekly Time Series".to_string(),
-        Function::Monthly => "Monthly Time Series".to_string(),
-    };
+pub(crate) mod parser {
+    use super::*;
+    use failure::{err_msg, Error};
+    use serde_json;
+    use serde_json::Value;
+    use std::io::Read;
 
-    let time_series_value = object
-        .get_mut(time_series_key)
-        .ok_or_else(|| err_msg("missing time series entries"))?
-        .take();
+    pub(crate) fn parse(function: &Function, reader: impl Read) -> Result<TimeSeries, Error> {
+        let mut object: Value = serde_json::from_reader(reader)?;
+        let time_series_key = match function {
+            Function::IntraDay(interval) => format!("Time Series ({})", interval.to_string()),
+            Function::Daily => "Time Series (Daily)".to_string(),
+            Function::Weekly => "Weekly Time Series".to_string(),
+            Function::Monthly => "Monthly Time Series".to_string(),
+        };
 
-    let time_series: TimeSeries = serde_json::from_value(time_series_value)?;
-    Ok(time_series)
+        let time_series_value = object
+            .get_mut(time_series_key)
+            .ok_or_else(|| err_msg("missing time series entries"))?
+            .take();
+
+        let time_series: TimeSeries = serde_json::from_value(time_series_value)?;
+        Ok(time_series)
+    }
 }
 
 #[cfg(test)]
@@ -127,7 +130,7 @@ mod tests {
     #[test]
     fn parse_intraday() {
         let data: &[u8] = include_bytes!("../tests/json/time_series_intraday_1min.json");
-        let time_series = parse(
+        let time_series = parser::parse(
             &Function::IntraDay(IntradayInterval::OneMinute),
             BufReader::new(data),
         ).expect("failed to parse entries");
@@ -163,7 +166,7 @@ mod tests {
     fn parse_daily() {
         let data: &[u8] = include_bytes!("../tests/json/time_series_daily.json");
         let time_series =
-            parse(&Function::Daily, BufReader::new(data)).expect("failed to parse entries");
+            parser::parse(&Function::Daily, BufReader::new(data)).expect("failed to parse entries");
         assert_eq!(time_series.len(), 100);
         let entries = time_series.entries();
         let (first_time, first_entry) = entries[0];
@@ -195,8 +198,8 @@ mod tests {
     #[test]
     fn parse_weekly() {
         let data: &[u8] = include_bytes!("../tests/json/time_series_weekly.json");
-        let time_series =
-            parse(&Function::Weekly, BufReader::new(data)).expect("failed to parse entries");
+        let time_series = parser::parse(&Function::Weekly, BufReader::new(data))
+            .expect("failed to parse entries");
         assert_eq!(time_series.len(), 961);
         let entries = time_series.entries();
         let (first_time, first_entry) = entries[0];
@@ -228,8 +231,8 @@ mod tests {
     #[test]
     fn parse_monthly() {
         let data: &[u8] = include_bytes!("../tests/json/time_series_monthly.json");
-        let time_series =
-            parse(&Function::Monthly, BufReader::new(data)).expect("failed to parse entries");
+        let time_series = parser::parse(&Function::Monthly, BufReader::new(data))
+            .expect("failed to parse entries");
         assert_eq!(time_series.len(), 221);
         let entries = time_series.entries();
         let (first_time, first_entry) = entries[0];

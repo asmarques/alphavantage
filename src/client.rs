@@ -76,7 +76,7 @@ impl Client {
             params.push(("interval", interval.to_string()));
         }
         let response = self.api_call(function.to_string(), &params)?;
-        let result = time_series::parse(function, response)?;
+        let result = time_series::parser::parse(function, response)?;
         Ok(result)
     }
 
