@@ -65,7 +65,7 @@ impl Client {
     fn api_call(
         &self,
         function: &str,
-        params: &Vec<(&str, &str)>,
+        params: &[(&str, &str)],
     ) -> Result<reqwest::Response, reqwest::Error> {
         let mut query = vec![("function", function), ("apikey", &self.key)];
         query.extend(params);
