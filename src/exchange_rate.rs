@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use chrono_tz::Tz;
 
 /// Represents a currency.
 #[derive(Debug, Eq, PartialEq)]
@@ -19,13 +20,13 @@ pub struct ExchangeRate {
     /// Value of the exchange rate.
     pub rate: f64,
     /// Date the exchange rate corresponds to.
-    pub date: DateTime<Utc>,
+    pub date: DateTime<Tz>,
 }
 
 pub(crate) mod parser {
     use super::*;
-    use deserialize::{from_str, to_datetime};
-    use failure::Error;
+    use deserialize::{from_str, parse_date};
+    use failure::{err_msg, Error};
     use serde_json;
     use std::io::Read;
 
@@ -47,20 +48,23 @@ pub(crate) mod parser {
         to_name: String,
         #[serde(rename = "5. Exchange Rate", deserialize_with = "from_str")]
         rate: f64,
-        #[serde(rename = "6. Last Refreshed", deserialize_with = "to_datetime")]
-        last_refreshed: DateTime<Utc>,
+        #[serde(rename = "6. Last Refreshed")]
+        last_refreshed: String,
         #[serde(rename = "7. Time Zone")]
         time_zone: String,
     }
 
     pub(crate) fn parse(reader: impl Read) -> Result<ExchangeRate, Error> {
         let helper: ExchangeRateHelper = serde_json::from_reader(reader)?;
-        if helper.data.time_zone != "UTC" {
-            return Err(format_err!(
-                "unsupported time zone: {}",
-                helper.data.time_zone
-            ));
-        }
+
+        let time_zone: Tz = helper
+            .data
+            .time_zone
+            .parse()
+            .map_err(|_| err_msg("error parsing time zone"))?;
+
+        let date = parse_date(&helper.data.last_refreshed, time_zone)?;
+
         let exchange_rate = ExchangeRate {
             from: Currency {
                 name: helper.data.from_name,
@@ -71,7 +75,7 @@ pub(crate) mod parser {
                 code: helper.data.to_code,
             },
             rate: helper.data.rate,
-            date: helper.data.last_refreshed,
+            date,
         };
         Ok(exchange_rate)
     }
@@ -80,7 +84,8 @@ pub(crate) mod parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use deserialize::DATETIME_FORMAT;
+    use chrono_tz::UTC;
+    use deserialize::parse_date;
     use std::io::BufReader;
 
     #[test]
@@ -88,8 +93,6 @@ mod tests {
         let data: &[u8] = include_bytes!("../tests/json/currency_exchange_rate.json");
         let exchange_rate =
             parser::parse(BufReader::new(data)).expect("failed to parse exchange rate");
-        let date = Utc.datetime_from_str("2018-06-23 10:27:49", DATETIME_FORMAT)
-            .unwrap();
         assert_eq!(
             exchange_rate,
             ExchangeRate {
@@ -102,7 +105,7 @@ mod tests {
                     code: "USD".to_string(),
                 },
                 rate: 1.16665014,
-                date,
+                date: parse_date("2018-06-23 10:27:49", UTC).unwrap(),
             }
         );
     }

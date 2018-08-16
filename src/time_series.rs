@@ -1,5 +1,5 @@
-use deserialize::from_str;
-use std::collections::HashMap;
+use chrono::DateTime;
+use chrono_tz::Tz;
 
 #[derive(Debug, Clone, Copy)]
 /// Represents the interval for an intraday time series.
@@ -30,49 +30,30 @@ impl IntradayInterval {
 }
 
 /// Represents a time series for a given symbol.
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct TimeSeries {
-    #[serde(flatten)]
-    entries: HashMap<String, Entry>,
-}
-
-impl TimeSeries {
-    /// Returns the entries in the time series sorted by ascending date.
-    /// Each item corresponds to a pair of the date and corresponding entry.
-    pub fn entries(&self) -> Vec<(&String, &Entry)> {
-        let mut entries: Vec<_> = self.entries.iter().collect();
-        entries.sort_by(|a, b| a.0.cmp(&b.0));
-        entries
-    }
-
-    /// Returns the length of the time series.
-    pub fn len(&self) -> usize {
-        self.entries.len()
-    }
-
-    /// Returns `true` if the time series is empty.
-    pub fn is_empty(&self) -> bool {
-        self.entries.is_empty()
-    }
+    /// Symbol the time series refers to.
+    pub symbol: String,
+    /// Date the information was last refreshed at.
+    pub last_refreshed: DateTime<Tz>,
+    /// Entries in the time series, sorted by ascending dates.
+    pub entries: Vec<Entry>,
 }
 
 /// Represents a set of values for an equity for a given period in the time series.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Entry {
+    /// Date.
+    pub date: DateTime<Tz>,
     /// Open value.
-    #[serde(rename = "1. open", deserialize_with = "from_str")]
     pub open: f64,
-    #[serde(rename = "2. high", deserialize_with = "from_str")]
     /// High value.
     pub high: f64,
-    #[serde(rename = "3. low", deserialize_with = "from_str")]
     /// Low value.
     pub low: f64,
     /// Close value.
-    #[serde(rename = "4. close", deserialize_with = "from_str")]
     pub close: f64,
     /// Trading volume.
-    #[serde(rename = "5. volume", deserialize_with = "from_str")]
     pub volume: u64,
 }
 
@@ -98,13 +79,63 @@ impl Function {
 
 pub(crate) mod parser {
     use super::*;
+    use chrono_tz::Tz;
+    use deserialize::{from_str, parse_date};
     use failure::{err_msg, Error};
     use serde_json;
-    use serde_json::Value;
+    use std::collections::HashMap;
     use std::io::Read;
 
+    #[derive(Debug, Deserialize)]
+    struct EntryHelper {
+        #[serde(rename = "1. open", deserialize_with = "from_str")]
+        pub open: f64,
+        #[serde(rename = "2. high", deserialize_with = "from_str")]
+        pub high: f64,
+        #[serde(rename = "3. low", deserialize_with = "from_str")]
+        pub low: f64,
+        #[serde(rename = "4. close", deserialize_with = "from_str")]
+        pub close: f64,
+        #[serde(rename = "5. volume", deserialize_with = "from_str")]
+        pub volume: u64,
+    }
+
+    #[derive(Debug, Deserialize)]
+    pub struct TimeSeriesHelper {
+        #[serde(rename = "Meta Data")]
+        metadata: HashMap<String, String>,
+        #[serde(flatten)]
+        time_series: HashMap<String, HashMap<String, EntryHelper>>,
+    }
+
     pub(crate) fn parse(function: &Function, reader: impl Read) -> Result<TimeSeries, Error> {
-        let mut object: Value = serde_json::from_reader(reader)?;
+        let helper: TimeSeriesHelper = serde_json::from_reader(reader)?;
+
+        let symbol = helper
+            .metadata
+            .get("2. Symbol")
+            .ok_or_else(|| err_msg("missing symbol"))?
+            .to_string();
+
+        let time_zone_key = match function {
+            Function::IntraDay(_) => "6. Time Zone",
+            Function::Daily => "5. Time Zone",
+            Function::Weekly | Function::Monthly => "4. Time Zone",
+        };
+
+        let time_zone: Tz = helper
+            .metadata
+            .get(time_zone_key)
+            .ok_or_else(|| err_msg("missing time zone"))?
+            .parse()
+            .map_err(|_| err_msg("error parsing time zone"))?;
+
+        let last_refreshed = helper
+            .metadata
+            .get("3. Last Refreshed")
+            .ok_or_else(|| err_msg("missing last refreshed"))
+            .map(|v| parse_date(v, time_zone))??;
+
         let time_series_key = match function {
             Function::IntraDay(interval) => format!("Time Series ({})", interval.to_string()),
             Function::Daily => "Time Series (Daily)".to_string(),
@@ -112,12 +143,33 @@ pub(crate) mod parser {
             Function::Monthly => "Monthly Time Series".to_string(),
         };
 
-        let time_series_value = object
-            .get_mut(time_series_key)
-            .ok_or_else(|| err_msg("missing time series entries"))?
-            .take();
+        let time_series = helper
+            .time_series
+            .get(&time_series_key)
+            .ok_or_else(|| err_msg("missing time series"))?;
 
-        let time_series: TimeSeries = serde_json::from_value(time_series_value)?;
+        let mut entries: Vec<Entry> = vec![];
+
+        for (d, v) in time_series.iter() {
+            let date = parse_date(d, time_zone)?;
+            let entry = Entry {
+                date: date,
+                open: v.open,
+                high: v.high,
+                low: v.low,
+                close: v.close,
+                volume: v.volume,
+            };
+            entries.push(entry);
+        }
+
+        entries.sort_by_key(|e| e.date);
+
+        let time_series = TimeSeries {
+            symbol,
+            last_refreshed,
+            entries,
+        };
         Ok(time_series)
     }
 }
@@ -125,6 +177,8 @@ pub(crate) mod parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono_tz::US::Eastern;
+    use deserialize::parse_date;
     use std::io::BufReader;
 
     #[test]
@@ -134,13 +188,11 @@ mod tests {
             &Function::IntraDay(IntradayInterval::OneMinute),
             BufReader::new(data),
         ).expect("failed to parse entries");
-        assert_eq!(time_series.len(), 100);
-        let entries = time_series.entries();
-        let (first_time, first_entry) = entries[0];
-        assert_eq!(first_time, "2018-06-01 14:21:00");
+        assert_eq!(time_series.entries.len(), 100);
         assert_eq!(
-            first_entry,
-            &Entry {
+            time_series.entries[0],
+            Entry {
+                date: parse_date("2018-06-01 14:21:00", Eastern).unwrap(),
                 open: 100.3975,
                 high: 100.4558,
                 low: 100.3850,
@@ -148,11 +200,10 @@ mod tests {
                 volume: 67726,
             }
         );
-        let (last_time, last_entry) = entries[99];
-        assert_eq!(last_time, "2018-06-01 16:00:00");
         assert_eq!(
-            last_entry,
-            &Entry {
+            time_series.entries[99],
+            Entry {
+                date: parse_date("2018-06-01 16:00:00", Eastern).unwrap(),
                 open: 100.6150,
                 high: 100.8100,
                 low: 100.5900,
@@ -167,13 +218,11 @@ mod tests {
         let data: &[u8] = include_bytes!("../tests/json/time_series_daily.json");
         let time_series =
             parser::parse(&Function::Daily, BufReader::new(data)).expect("failed to parse entries");
-        assert_eq!(time_series.len(), 100);
-        let entries = time_series.entries();
-        let (first_time, first_entry) = entries[0];
-        assert_eq!(first_time, "2018-01-17");
+        assert_eq!(time_series.entries.len(), 100);
         assert_eq!(
-            first_entry,
-            &Entry {
+            time_series.entries[0],
+            Entry {
+                date: parse_date("2018-01-17", Eastern).unwrap(),
                 open: 89.0800,
                 high: 90.2800,
                 low: 88.7500,
@@ -181,11 +230,10 @@ mod tests {
                 volume: 24659472,
             }
         );
-        let (last_time, last_entry) = entries[99];
-        assert_eq!(last_time, "2018-06-08");
         assert_eq!(
-            last_entry,
-            &Entry {
+            time_series.entries[99],
+            Entry {
+                date: parse_date("2018-06-08", Eastern).unwrap(),
                 open: 101.0924,
                 high: 101.9500,
                 low: 100.5400,
@@ -200,13 +248,11 @@ mod tests {
         let data: &[u8] = include_bytes!("../tests/json/time_series_weekly.json");
         let time_series = parser::parse(&Function::Weekly, BufReader::new(data))
             .expect("failed to parse entries");
-        assert_eq!(time_series.len(), 961);
-        let entries = time_series.entries();
-        let (first_time, first_entry) = entries[0];
-        assert_eq!(first_time, "2000-01-14");
+        assert_eq!(time_series.entries.len(), 961);
         assert_eq!(
-            first_entry,
-            &Entry {
+            time_series.entries[0],
+            Entry {
+                date: parse_date("2000-01-14", Eastern).unwrap(),
                 open: 113.4400,
                 high: 114.2500,
                 low: 101.5000,
@@ -214,11 +260,10 @@ mod tests {
                 volume: 157400000,
             }
         );
-        let (last_time, last_entry) = entries[960];
-        assert_eq!(last_time, "2018-06-08");
         assert_eq!(
-            last_entry,
-            &Entry {
+            time_series.entries[960],
+            Entry {
+                date: parse_date("2018-06-08", Eastern).unwrap(),
                 open: 101.2600,
                 high: 102.6900,
                 low: 100.3800,
@@ -233,13 +278,11 @@ mod tests {
         let data: &[u8] = include_bytes!("../tests/json/time_series_monthly.json");
         let time_series = parser::parse(&Function::Monthly, BufReader::new(data))
             .expect("failed to parse entries");
-        assert_eq!(time_series.len(), 221);
-        let entries = time_series.entries();
-        let (first_time, first_entry) = entries[0];
-        assert_eq!(first_time, "2000-02-29");
+        assert_eq!(time_series.entries.len(), 221);
         assert_eq!(
-            first_entry,
-            &Entry {
+            time_series.entries[0],
+            Entry {
+                date: parse_date("2000-02-29", Eastern).unwrap(),
                 open: 98.5000,
                 high: 110.0000,
                 low: 88.1200,
@@ -247,12 +290,10 @@ mod tests {
                 volume: 667243800,
             }
         );
-        let (last_time, last_entry) = entries[220];
-
-        assert_eq!(last_time, "2018-06-08");
         assert_eq!(
-            last_entry,
-            &Entry {
+            time_series.entries[220],
+            Entry {
+                date: parse_date("2018-06-08", Eastern).unwrap(),
                 open: 99.2798,
                 high: 102.6900,
                 low: 99.1700,
