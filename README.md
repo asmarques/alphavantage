@@ -1,6 +1,8 @@
 alphavantage
 ============
 
+[![Build Status](https://travis-ci.org/asmarques/alphavantage.svg)](https://travis-ci.org/asmarques/alphavantage)
+
 A Rust client for the [Alpha Vantage](https://www.alphavantage.co) API.
 
 ## Installation
