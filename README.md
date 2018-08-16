@@ -18,8 +18,10 @@ extern crate alphavantage;
 fn main() {
     let client = alphavantage::Client::new("MY_SECRET_TOKEN");
     let time_series = client.get_time_series_daily("GOOG").unwrap();
-    let entries = time_series.entries();
-    let (date, entry) = entries.last().unwrap();
-    println!("{}: {}", date, entry.close);
+    let entry = time_series.entries.last().unwrap();
+    println!("{:?}", entry);
+
+    let exchange_rate = client.get_exchange_rate("USD", "EUR").unwrap();
+    println!("{:?}", exchange_rate);
 }
 ```
