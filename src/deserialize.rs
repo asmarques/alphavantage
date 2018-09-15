@@ -19,7 +19,7 @@ where
 }
 
 pub(crate) fn parse_date(value: &str, time_zone: Tz) -> Result<DateTime<Tz>, Error> {
-    if value.contains(":") {
+    if value.contains(':') {
         let datetime = NaiveDateTime::parse_from_str(value, DATETIME_FORMAT)?;
         time_zone
             .from_local_datetime(&datetime)

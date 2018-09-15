@@ -161,7 +161,7 @@ pub(crate) mod parser {
         for (d, v) in time_series.iter() {
             let date = parse_date(d, time_zone)?;
             let entry = Entry {
-                date: date,
+                date,
                 open: v.open,
                 high: v.high,
                 low: v.low,
