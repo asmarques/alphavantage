@@ -1,5 +1,5 @@
 use exchange_rate;
-use failure::Error;
+use failure;
 use reqwest;
 use time_series;
 
@@ -9,6 +9,22 @@ const URL_ENDPOINT: &str = "https://www.alphavantage.co/query";
 pub struct Client {
     key: String,
     client: reqwest::Client,
+}
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "connection error: {}", error)]
+    ConnectionError {
+        #[cause]
+        error: failure::Compat<failure::Error>,
+    },
+    #[fail(display = "server returned HTTP status code {}", code)]
+    ServerError { code: u16 },
+    #[fail(display = "parsing error: {}", error)]
+    ParsingError {
+        #[cause]
+        error: failure::Compat<failure::Error>,
+    },
 }
 
 impl Client {
@@ -62,7 +78,10 @@ impl Client {
             ("to_currency", to_currency_code),
         ];
         let response = self.api_call(function, &params)?;
-        let result = exchange_rate::parser::parse(response)?;
+        let result =
+            exchange_rate::parser::parse(response).map_err(|error| Error::ParsingError {
+                error: error.compat(),
+            })?;
         Ok(result)
     }
 
@@ -76,7 +95,11 @@ impl Client {
             params.push(("interval", interval.to_string()));
         }
         let response = self.api_call(function.to_string(), &params)?;
-        let result = time_series::parser::parse(function, response)?;
+        let result = time_series::parser::parse(function, response).map_err(|error| {
+            Error::ParsingError {
+                error: error.compat(),
+            }
+        })?;
         Ok(result)
     }
 
@@ -84,9 +107,23 @@ impl Client {
         &self,
         function: &str,
         params: &[(&str, &str)],
-    ) -> Result<reqwest::Response, reqwest::Error> {
+    ) -> Result<reqwest::Response, Error> {
         let mut query = vec![("function", function), ("apikey", &self.key)];
         query.extend(params);
-        self.client.get(URL_ENDPOINT).query(&query).send()
+        let response = self
+            .client
+            .get(URL_ENDPOINT)
+            .query(&query)
+            .send()
+            .map_err(|error| Error::ConnectionError {
+                error: failure::Error::from(error).compat(),
+            })?;
+        let status = response.status();
+        if status != reqwest::StatusCode::Ok {
+            return Err(Error::ServerError {
+                code: status.as_u16(),
+            });
+        }
+        Ok(response)
     }
 }

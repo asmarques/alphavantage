@@ -32,8 +32,10 @@ pub(crate) mod parser {
 
     #[derive(Debug, Deserialize)]
     struct ExchangeRateHelper {
+        #[serde(rename = "Error Message")]
+        error: Option<String>,
         #[serde(rename = "Realtime Currency Exchange Rate")]
-        data: RealtimeExchangeRate,
+        data: Option<RealtimeExchangeRate>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -57,24 +59,31 @@ pub(crate) mod parser {
     pub(crate) fn parse(reader: impl Read) -> Result<ExchangeRate, Error> {
         let helper: ExchangeRateHelper = serde_json::from_reader(reader)?;
 
-        let time_zone: Tz = helper
+        if let Some(error) = helper.error {
+            return Err(format_err!("received error: {}", error));
+        }
+
+        let data = helper
             .data
+            .ok_or_else(|| err_msg("missing exchange rate data"))?;
+
+        let time_zone: Tz = data
             .time_zone
             .parse()
             .map_err(|_| err_msg("error parsing time zone"))?;
 
-        let date = parse_date(&helper.data.last_refreshed, time_zone)?;
+        let date = parse_date(&data.last_refreshed, time_zone)?;
 
         let exchange_rate = ExchangeRate {
             from: Currency {
-                name: helper.data.from_name,
-                code: helper.data.from_code,
+                name: data.from_name,
+                code: data.from_code,
             },
             to: Currency {
-                name: helper.data.to_name,
-                code: helper.data.to_code,
+                name: data.to_name,
+                code: data.to_code,
             },
-            rate: helper.data.rate,
+            rate: data.rate,
             date,
         };
         Ok(exchange_rate)

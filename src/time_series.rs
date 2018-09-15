@@ -102,17 +102,24 @@ pub(crate) mod parser {
 
     #[derive(Debug, Deserialize)]
     pub struct TimeSeriesHelper {
+        #[serde(rename = "Error Message")]
+        error: Option<String>,
         #[serde(rename = "Meta Data")]
-        metadata: HashMap<String, String>,
+        metadata: Option<HashMap<String, String>>,
         #[serde(flatten)]
-        time_series: HashMap<String, HashMap<String, EntryHelper>>,
+        time_series: Option<HashMap<String, HashMap<String, EntryHelper>>>,
     }
 
     pub(crate) fn parse(function: &Function, reader: impl Read) -> Result<TimeSeries, Error> {
         let helper: TimeSeriesHelper = serde_json::from_reader(reader)?;
 
-        let symbol = helper
-            .metadata
+        if let Some(error) = helper.error {
+            return Err(format_err!("received error: {}", error));
+        }
+
+        let metadata = helper.metadata.ok_or_else(|| err_msg("missing metadata"))?;
+
+        let symbol = metadata
             .get("2. Symbol")
             .ok_or_else(|| err_msg("missing symbol"))?
             .to_string();
@@ -123,15 +130,13 @@ pub(crate) mod parser {
             Function::Weekly | Function::Monthly => "4. Time Zone",
         };
 
-        let time_zone: Tz = helper
-            .metadata
+        let time_zone: Tz = metadata
             .get(time_zone_key)
             .ok_or_else(|| err_msg("missing time zone"))?
             .parse()
             .map_err(|_| err_msg("error parsing time zone"))?;
 
-        let last_refreshed = helper
-            .metadata
+        let last_refreshed = metadata
             .get("3. Last Refreshed")
             .ok_or_else(|| err_msg("missing last refreshed"))
             .map(|v| parse_date(v, time_zone))??;
@@ -143,10 +148,13 @@ pub(crate) mod parser {
             Function::Monthly => "Monthly Time Series".to_string(),
         };
 
-        let time_series = helper
+        let time_series_map = helper
             .time_series
-            .get(&time_series_key)
             .ok_or_else(|| err_msg("missing time series"))?;
+
+        let time_series = time_series_map
+            .get(&time_series_key)
+            .ok_or_else(|| err_msg("missing requested time series"))?;
 
         let mut entries: Vec<Entry> = vec![];
 
