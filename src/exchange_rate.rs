@@ -1,5 +1,7 @@
 use chrono::prelude::*;
 use chrono_tz::Tz;
+use failure::format_err;
+use serde_derive::Deserialize;
 
 /// Represents a currency.
 #[derive(Debug, Eq, PartialEq)]

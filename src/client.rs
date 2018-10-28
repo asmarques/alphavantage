@@ -1,5 +1,6 @@
 use exchange_rate;
 use failure;
+use failure_derive::Fail;
 use reqwest;
 use time_series;
 

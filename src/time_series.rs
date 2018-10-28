@@ -1,5 +1,7 @@
 use chrono::DateTime;
 use chrono_tz::Tz;
+use failure::format_err;
+use serde_derive::Deserialize;
 
 #[derive(Debug, Clone, Copy)]
 /// Represents the interval for an intraday time series.
