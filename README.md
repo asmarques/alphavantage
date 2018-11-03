@@ -5,13 +5,6 @@ alphavantage
 
 A Rust client for the [Alpha Vantage](https://www.alphavantage.co) API.
 
-## Installation
-
-```toml
-[dependencies]
-alphavantage = "*"
-```
-
 ## Example
 
 ```rust
