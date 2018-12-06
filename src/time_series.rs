@@ -82,7 +82,7 @@ impl Function {
 pub(crate) mod parser {
     use super::*;
     use chrono_tz::Tz;
-    use deserialize::{from_str, parse_date};
+    use crate::deserialize::{from_str, parse_date};
     use failure::{err_msg, Error};
     use serde_json;
     use std::collections::HashMap;
@@ -188,7 +188,7 @@ pub(crate) mod parser {
 mod tests {
     use super::*;
     use chrono_tz::US::Eastern;
-    use deserialize::parse_date;
+    use crate::deserialize::parse_date;
     use std::io::BufReader;
 
     #[test]

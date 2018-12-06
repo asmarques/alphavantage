@@ -27,7 +27,7 @@ pub struct ExchangeRate {
 
 pub(crate) mod parser {
     use super::*;
-    use deserialize::{from_str, parse_date};
+    use crate::deserialize::{from_str, parse_date};
     use failure::{err_msg, Error};
     use serde_json;
     use std::io::Read;
@@ -96,7 +96,7 @@ pub(crate) mod parser {
 mod tests {
     use super::*;
     use chrono_tz::UTC;
-    use deserialize::parse_date;
+    use crate::deserialize::parse_date;
     use std::io::BufReader;
 
     #[test]

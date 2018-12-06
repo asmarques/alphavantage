@@ -1,8 +1,8 @@
-use exchange_rate;
+use crate::exchange_rate;
 use failure;
 use failure_derive::Fail;
 use reqwest;
-use time_series;
+use crate::time_series;
 
 const URL_ENDPOINT: &str = "https://www.alphavantage.co/query";
 

@@ -8,6 +8,7 @@ repository = "https://github.com/asmarques/alphavantage"
 readme = "README.md"
 keywords = ["finance", "stocks", "alpha", "vantage"]
 categories = ["api-bindings", "web-programming::http-client"]
+edition = "2018"
 
 [dependencies]
 serde = "1.0"
