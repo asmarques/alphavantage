@@ -81,8 +81,8 @@ impl Function {
 
 pub(crate) mod parser {
     use super::*;
-    use chrono_tz::Tz;
     use crate::deserialize::{from_str, parse_date};
+    use chrono_tz::Tz;
     use failure::{err_msg, Error};
     use serde_json;
     use std::collections::HashMap;
@@ -187,8 +187,8 @@ pub(crate) mod parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono_tz::US::Eastern;
     use crate::deserialize::parse_date;
+    use chrono_tz::US::Eastern;
     use std::io::BufReader;
 
     #[test]
@@ -197,7 +197,8 @@ mod tests {
         let time_series = parser::parse(
             &Function::IntraDay(IntradayInterval::OneMinute),
             BufReader::new(data),
-        ).expect("failed to parse entries");
+        )
+        .expect("failed to parse entries");
         assert_eq!(time_series.entries.len(), 100);
         assert_eq!(
             time_series.entries[0],

@@ -95,8 +95,8 @@ pub(crate) mod parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono_tz::UTC;
     use crate::deserialize::parse_date;
+    use chrono_tz::UTC;
     use std::io::BufReader;
 
     #[test]
