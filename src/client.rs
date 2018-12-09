@@ -70,7 +70,7 @@ impl Client {
     }
 
     /// Retrieve montly time series for the specified `symbol` including up to 20 years of historical data.
-    pub fn get_time_series_montly(&self, symbol: &str) -> Result<time_series::TimeSeries, Error> {
+    pub fn get_time_series_monthly(&self, symbol: &str) -> Result<time_series::TimeSeries, Error> {
         let function = time_series::Function::Monthly;
         self.get_time_series(&function, symbol)
     }

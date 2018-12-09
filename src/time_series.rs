@@ -74,7 +74,7 @@ impl Function {
             IntraDay(_) => "TIME_SERIES_INTRADAY",
             Daily => "TIME_SERIES_DAILY",
             Weekly => "TIME_SERIES_WEEKLY",
-            Monthly => "TIME_SERIES_MONTLY",
+            Monthly => "TIME_SERIES_MONTHLY",
         }
     }
 }
