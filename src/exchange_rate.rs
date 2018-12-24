@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use chrono_tz::Tz;
 use failure::format_err;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 /// Represents a currency.
 #[derive(Debug, Eq, PartialEq)]
@@ -29,7 +29,6 @@ pub(crate) mod parser {
     use super::*;
     use crate::deserialize::{from_str, parse_date};
     use failure::{err_msg, Error};
-    use serde_json;
     use std::io::Read;
 
     #[derive(Debug, Deserialize)]

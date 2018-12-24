@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use chrono_tz::Tz;
 use failure::format_err;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy)]
 /// Represents the interval for an intraday time series.
@@ -84,7 +84,6 @@ pub(crate) mod parser {
     use crate::deserialize::{from_str, parse_date};
     use chrono_tz::Tz;
     use failure::{err_msg, Error};
-    use serde_json;
     use std::collections::HashMap;
     use std::io::Read;
 
