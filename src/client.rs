@@ -129,7 +129,7 @@ impl Client {
                 error: failure::Error::from(error).compat(),
             })?;
         let status = response.status();
-        if status != reqwest::StatusCode::Ok {
+        if status != reqwest::StatusCode::OK {
             return Err(Error::ServerError {
                 code: status.as_u16(),
             });
