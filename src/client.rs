@@ -9,7 +9,7 @@ const URL_ENDPOINT: &str = "https://www.alphavantage.co/query";
 /// A client for the Alpha Vantage API.
 pub struct Client {
     key: String,
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
 }
 
 /// Set of errors which can occur when calling the API.
@@ -40,7 +40,7 @@ pub enum Error {
 impl Client {
     /// Create a new client using the specified API `key`.
     pub fn new(key: &str) -> Client {
-        let client = reqwest::Client::new();
+        let client = reqwest::blocking::Client::new();
         Client {
             key: String::from(key),
             client,
@@ -117,7 +117,7 @@ impl Client {
         &self,
         function: &str,
         params: &[(&str, &str)],
-    ) -> Result<reqwest::Response, Error> {
+    ) -> Result<reqwest::blocking::Response, Error> {
         let mut query = vec![("function", function), ("apikey", &self.key)];
         query.extend(params);
         let response = self
@@ -129,7 +129,7 @@ impl Client {
                 error: failure::Error::from(error).compat(),
             })?;
         let status = response.status();
-        if status != reqwest::StatusCode::Ok {
+        if status != reqwest::StatusCode::OK {
             return Err(Error::ServerError {
                 code: status.as_u16(),
             });
