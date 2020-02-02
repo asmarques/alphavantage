@@ -1,6 +1,5 @@
 use chrono::prelude::*;
 use chrono_tz::Tz;
-use failure::format_err;
 use serde::Deserialize;
 
 /// Represents a currency.
@@ -28,7 +27,7 @@ pub struct ExchangeRate {
 pub(crate) mod parser {
     use super::*;
     use crate::deserialize::{from_str, parse_date};
-    use failure::{err_msg, Error};
+    use crate::error::Error;
     use std::io::Read;
 
     #[derive(Debug, Deserialize)]
@@ -61,17 +60,17 @@ pub(crate) mod parser {
         let helper: ExchangeRateHelper = serde_json::from_reader(reader)?;
 
         if let Some(error) = helper.error {
-            return Err(format_err!("received error: {}", error));
+            return Err(Error::APIError(error));
         }
 
         let data = helper
             .data
-            .ok_or_else(|| err_msg("missing exchange rate data"))?;
+            .ok_or_else(|| Error::ParsingError("missing exchange rate data".into()))?;
 
         let time_zone: Tz = data
             .time_zone
             .parse()
-            .map_err(|_| err_msg("error parsing time zone"))?;
+            .map_err(|_| Error::ParsingError("error parsing time zone".into()))?;
 
         let date = parse_date(&data.last_refreshed, time_zone)?;
 

@@ -1,6 +1,5 @@
 use chrono::DateTime;
 use chrono_tz::Tz;
-use failure::format_err;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy)]
@@ -82,8 +81,8 @@ impl Function {
 pub(crate) mod parser {
     use super::*;
     use crate::deserialize::{from_str, parse_date};
+    use crate::error::Error;
     use chrono_tz::Tz;
-    use failure::{err_msg, Error};
     use std::collections::HashMap;
     use std::io::Read;
 
@@ -115,14 +114,16 @@ pub(crate) mod parser {
         let helper: TimeSeriesHelper = serde_json::from_reader(reader)?;
 
         if let Some(error) = helper.error {
-            return Err(format_err!("received error: {}", error));
+            return Err(Error::APIError(error));
         }
 
-        let metadata = helper.metadata.ok_or_else(|| err_msg("missing metadata"))?;
+        let metadata = helper
+            .metadata
+            .ok_or_else(|| Error::ParsingError("missing metadata".into()))?;
 
         let symbol = metadata
             .get("2. Symbol")
-            .ok_or_else(|| err_msg("missing symbol"))?
+            .ok_or_else(|| Error::ParsingError("missing symbol".into()))?
             .to_string();
 
         let time_zone_key = match function {
@@ -133,13 +134,13 @@ pub(crate) mod parser {
 
         let time_zone: Tz = metadata
             .get(time_zone_key)
-            .ok_or_else(|| err_msg("missing time zone"))?
+            .ok_or_else(|| Error::ParsingError("missing time zone".into()))?
             .parse()
-            .map_err(|_| err_msg("error parsing time zone"))?;
+            .map_err(|_| Error::ParsingError("error parsing time zone".into()))?;
 
         let last_refreshed = metadata
             .get("3. Last Refreshed")
-            .ok_or_else(|| err_msg("missing last refreshed"))
+            .ok_or_else(|| Error::ParsingError("missing last refreshed".into()))
             .map(|v| parse_date(v, time_zone))??;
 
         let time_series_key = match function {
@@ -151,11 +152,11 @@ pub(crate) mod parser {
 
         let time_series_map = helper
             .time_series
-            .ok_or_else(|| err_msg("missing time series"))?;
+            .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
 
         let time_series = time_series_map
             .get(&time_series_key)
-            .ok_or_else(|| err_msg("missing requested time series"))?;
+            .ok_or_else(|| Error::ParsingError("missing requested time series".into()))?;
 
         let mut entries: Vec<Entry> = vec![];
 

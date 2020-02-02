@@ -1,8 +1,8 @@
 use crate::error::Error;
 use crate::exchange_rate;
 use crate::time_series;
-use failure;
 use reqwest;
+use std::io::Read;
 
 const URL_ENDPOINT: &str = "https://www.alphavantage.co/query";
 
@@ -63,10 +63,7 @@ impl Client {
             ("to_currency", to_currency_code),
         ];
         let response = self.api_call(function, &params)?;
-        let result =
-            exchange_rate::parser::parse(response).map_err(|error| Error::ParsingError {
-                error: error.compat(),
-            })?;
+        let result = exchange_rate::parser::parse(response)?;
         Ok(result)
     }
 
@@ -80,34 +77,17 @@ impl Client {
             params.push(("interval", interval.to_string()));
         }
         let response = self.api_call(function.to_string(), &params)?;
-        let result = time_series::parser::parse(function, response).map_err(|error| {
-            Error::ParsingError {
-                error: error.compat(),
-            }
-        })?;
+        let result = time_series::parser::parse(function, response)?;
         Ok(result)
     }
 
-    fn api_call(
-        &self,
-        function: &str,
-        params: &[(&str, &str)],
-    ) -> Result<reqwest::blocking::Response, Error> {
+    fn api_call(&self, function: &str, params: &[(&str, &str)]) -> Result<impl Read, Error> {
         let mut query = vec![("function", function), ("apikey", &self.key)];
         query.extend(params);
-        let response = self
-            .client
-            .get(URL_ENDPOINT)
-            .query(&query)
-            .send()
-            .map_err(|error| Error::ConnectionError {
-                error: failure::Error::from(error).compat(),
-            })?;
+        let response = self.client.get(URL_ENDPOINT).query(&query).send()?;
         let status = response.status();
         if status != reqwest::StatusCode::OK {
-            return Err(Error::ServerError {
-                code: status.as_u16(),
-            });
+            return Err(Error::ServerError(status.as_u16()));
         }
         Ok(response)
     }

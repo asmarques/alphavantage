@@ -1,7 +1,5 @@
 use alphavantage::time_series::IntradayInterval;
 use alphavantage::Client;
-use exitfailure::ExitFailure;
-use failure::{err_msg, format_err};
 use std::env;
 use structopt::StructOpt;
 
@@ -21,12 +19,12 @@ struct Cli {
     symbol: String,
 }
 
-fn main() -> Result<(), ExitFailure> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::from_args();
     let token = args
         .token
         .or_else(|| env::var(TOKEN_ENV_KEY).ok())
-        .ok_or_else(|| err_msg("missing token"))?;
+        .ok_or_else(|| "missing token")?;
 
     let symbol = &args.symbol;
     let client = Client::new(&token);
@@ -40,7 +38,7 @@ fn main() -> Result<(), ExitFailure> {
         "daily" => client.get_time_series_daily(symbol),
         "weekly" => client.get_time_series_weekly(symbol),
         "monthly" => client.get_time_series_monthly(symbol),
-        _ => Err(format_err!("unknown period {}", args.period))?,
+        _ => Err(format!("unknown period {}", args.period))?,
     }?;
 
     println!(

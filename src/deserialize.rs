@@ -1,6 +1,6 @@
+use crate::error::Error;
 use chrono::prelude::*;
 use chrono_tz::Tz;
-use failure::{err_msg, Error};
 use serde::de::{self, Deserialize, Deserializer};
 use std::fmt::Display;
 use std::str::FromStr;
@@ -24,12 +24,12 @@ pub(crate) fn parse_date(value: &str, time_zone: Tz) -> Result<DateTime<Tz>, Err
         time_zone
             .from_local_datetime(&datetime)
             .single()
-            .ok_or_else(|| err_msg("unable to parse datetime"))
+            .ok_or_else(|| Error::ParsingError("unable to parse datetime".into()))
     } else {
         let datetime = NaiveDate::parse_from_str(value, DATE_FORMAT).map(|d| d.and_hms(0, 0, 0))?;
         time_zone
             .from_local_datetime(&datetime)
             .single()
-            .ok_or_else(|| err_msg("unable to parse date"))
+            .ok_or_else(|| Error::ParsingError("unable to parse date".into()))
     }
 }

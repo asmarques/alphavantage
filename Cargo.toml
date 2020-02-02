@@ -14,11 +14,9 @@ edition = "2018"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 reqwest = { version = "0.10", features = ["blocking"] }
-failure = "0.1"
-failure_derive = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.4"
+derive_more = "0.99"
 
 [dev-dependencies]
 structopt = "0.2"
-exitfailure = "0.5"
