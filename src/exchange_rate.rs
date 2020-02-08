@@ -1,3 +1,4 @@
+//! Exchange rate related operations
 use chrono::prelude::*;
 use chrono_tz::Tz;
 use serde::Deserialize;

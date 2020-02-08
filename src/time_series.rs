@@ -1,6 +1,8 @@
+//! Time series related operations
 use chrono::DateTime;
 use chrono_tz::Tz;
 use serde::Deserialize;
+use std::convert::From;
 
 #[derive(Debug, Clone, Copy)]
 /// Represents the interval for an intraday time series.
@@ -66,10 +68,10 @@ pub(crate) enum Function {
     Monthly,
 }
 
-impl Function {
-    pub(crate) fn to_string(&self) -> &'static str {
-        use self::Function::*;
-        match self {
+impl From<&'_ Function> for &'static str {
+    fn from(function: &'_ Function) -> Self {
+        use Function::*;
+        match function {
             IntraDay(_) => "TIME_SERIES_INTRADAY",
             Daily => "TIME_SERIES_DAILY",
             Weekly => "TIME_SERIES_WEEKLY",

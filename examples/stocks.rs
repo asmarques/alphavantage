@@ -18,8 +18,8 @@ struct Cli {
     #[structopt(help = "stock symbol (e.g. AAPL)")]
     symbol: String,
 }
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::from_args();
     let token = args
         .token
@@ -30,14 +30,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::new(&token);
 
     let time_series = match args.period.as_str() {
-        "1min" => client.get_time_series_intraday(symbol, IntradayInterval::OneMinute),
-        "5min" => client.get_time_series_intraday(symbol, IntradayInterval::FiveMinutes),
-        "15min" => client.get_time_series_intraday(symbol, IntradayInterval::FifteenMinutes),
-        "30min" => client.get_time_series_intraday(symbol, IntradayInterval::ThirtyMinutes),
-        "hourly" => client.get_time_series_intraday(symbol, IntradayInterval::SixtyMinutes),
-        "daily" => client.get_time_series_daily(symbol),
-        "weekly" => client.get_time_series_weekly(symbol),
-        "monthly" => client.get_time_series_monthly(symbol),
+        "1min" => {
+            client
+                .get_time_series_intraday(symbol, IntradayInterval::OneMinute)
+                .await
+        }
+        "5min" => {
+            client
+                .get_time_series_intraday(symbol, IntradayInterval::FiveMinutes)
+                .await
+        }
+        "15min" => {
+            client
+                .get_time_series_intraday(symbol, IntradayInterval::FifteenMinutes)
+                .await
+        }
+        "30min" => {
+            client
+                .get_time_series_intraday(symbol, IntradayInterval::ThirtyMinutes)
+                .await
+        }
+        "hourly" => {
+            client
+                .get_time_series_intraday(symbol, IntradayInterval::SixtyMinutes)
+                .await
+        }
+        "daily" => client.get_time_series_daily(symbol).await,
+        "weekly" => client.get_time_series_weekly(symbol).await,
+        "monthly" => client.get_time_series_monthly(symbol).await,
         _ => Err(format!("unknown period {}", args.period))?,
     }?;
 
