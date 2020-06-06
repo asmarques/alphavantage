@@ -4,7 +4,7 @@ use chrono_tz::Tz;
 use serde::Deserialize;
 
 /// Represents a currency.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Currency {
     /// The currency's name.
     pub name: String,
@@ -13,7 +13,7 @@ pub struct Currency {
 }
 
 /// Represents the exchange rate for a currency pair.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ExchangeRate {
     /// Currency to get the exchange rate for.
     pub from: Currency,

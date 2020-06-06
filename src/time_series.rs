@@ -33,7 +33,7 @@ impl IntradayInterval {
 }
 
 /// Represents a time series for a given symbol.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TimeSeries {
     /// Symbol the time series refers to.
     pub symbol: String,
@@ -44,7 +44,7 @@ pub struct TimeSeries {
 }
 
 /// Represents a set of values for an equity for a given period in the time series.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Entry {
     /// Date.
     pub date: DateTime<Tz>,
