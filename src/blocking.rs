@@ -6,10 +6,41 @@ use crate::time_series;
 use reqwest;
 use std::io::Read;
 
+/// Controls how much data is returned by the Alpha Vantage API.
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum OutputSize {
+    /// Default. Returns the latest 100 datapoints.
+    Compact,
+
+    /// Returns the full-length time series.
+    Full
+}
+
+impl ToString for OutputSize {
+    fn to_string(&self) -> String {
+        match self {
+            OutputSize::Compact => "compact".to_string(),
+            OutputSize::Full => "full".to_string()
+        }
+    }
+}
+
 /// A blocking client for the Alpha Vantage API.
 pub struct Client {
     builder: APIRequestBuilder,
     client: reqwest::blocking::Client,
+
+    /// Controls the output size of the Alpha Vantage API. Compact by default.
+    /// Wrapped in a Cell to allow for interior mutability. Change it like so:
+    ///
+    /// ```rust
+    /// use alphavantage::blocking::OutputSize;
+    /// let client = alphavantage::blocking::Client::new("key");
+    /// assert_eq!(client.output_size.get(), OutputSize::Compact);
+    /// client.output_size.set(OutputSize::Full);
+    /// assert_eq!(client.output_size.get(), OutputSize::Full);
+    /// ```
+    pub output_size: std::cell::Cell<OutputSize>
 }
 
 impl Client {
@@ -18,6 +49,7 @@ impl Client {
         Client {
             builder: APIRequestBuilder::new(key),
             client: reqwest::blocking::Client::new(),
+            output_size: std::cell::Cell::new(OutputSize::Compact)
         }
     }
 
@@ -71,7 +103,8 @@ impl Client {
         function: &time_series::Function,
         symbol: &str,
     ) -> Result<time_series::TimeSeries, Error> {
-        let mut params = vec![("symbol", symbol)];
+        let output_size = self.output_size.get().to_string();
+        let mut params = vec![("symbol", symbol), ("outputsize", output_size.as_str())];
         if let time_series::Function::IntraDay(interval) = function {
             params.push(("interval", interval.to_string()));
         }
@@ -88,5 +121,19 @@ impl Client {
             return Err(Error::ServerError(status.as_u16()));
         }
         Ok(response)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::OutputSize;
+
+    #[test]
+    fn test_output_size_strings() {
+        let a = OutputSize::Compact;
+        let b = OutputSize::Full;
+
+        assert_eq!(a.to_string(), "compact");
+        assert_eq!(b.to_string(), "full");
     }
 }
