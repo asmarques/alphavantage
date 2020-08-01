@@ -4,6 +4,22 @@ use chrono_tz::Tz;
 use serde::Deserialize;
 use std::convert::From;
 
+#[derive(Debug)]
+pub(crate) enum OutputSize {
+    Compact,
+    Full,
+}
+
+impl OutputSize {
+    pub(crate) fn to_string(&self) -> &'static str {
+        use self::OutputSize::*;
+        match self {
+            Compact => "compact",
+            Full => "full",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 /// Represents the interval for an intraday time series.
 pub enum IntradayInterval {

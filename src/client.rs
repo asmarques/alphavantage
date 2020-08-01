@@ -20,41 +20,110 @@ impl Client {
         }
     }
 
-    /// Retrieve intraday time series for the specified `symbol` updated in realtime.
+    /// Retrieve intraday time series for the specified `symbol` updated in realtime (latest 100 data points).
     pub async fn get_time_series_intraday(
         &self,
         symbol: &str,
         interval: time_series::IntradayInterval,
     ) -> Result<time_series::TimeSeries, Error> {
-        self.get_time_series(&time_series::Function::IntraDay(interval), symbol)
-            .await
+        self.get_time_series(
+            &time_series::Function::IntraDay(interval),
+            symbol,
+            time_series::OutputSize::Compact,
+        )
+        .await
     }
 
-    /// Retrieve daily time series for the specified `symbol` including up to 20 years of historical data.
+    /// Retrieve intraday time series for the specified `symbol` updated in realtime (full data set).
+    pub async fn get_time_series_intraday_full(
+        &self,
+        symbol: &str,
+        interval: time_series::IntradayInterval,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::IntraDay(interval),
+            symbol,
+            time_series::OutputSize::Full,
+        )
+        .await
+    }
+
+    /// Retrieve daily time series for the specified `symbol` (latest 100 data points).
     pub async fn get_time_series_daily(
         &self,
         symbol: &str,
     ) -> Result<time_series::TimeSeries, Error> {
-        self.get_time_series(&time_series::Function::Daily, symbol)
-            .await
+        self.get_time_series(
+            &time_series::Function::Daily,
+            symbol,
+            time_series::OutputSize::Compact,
+        )
+        .await
     }
 
-    /// Retrieve weekly time series for the specified `symbol` including up to 20 years of historical data.
+    /// Retrieve daily time series for the specified `symbol` (full data set).
+    pub async fn get_time_series_daily_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::Daily,
+            symbol,
+            time_series::OutputSize::Full,
+        )
+        .await
+    }
+
+    /// Retrieve weekly time series for the specified `symbol` (latest 100 data points).
     pub async fn get_time_series_weekly(
         &self,
         symbol: &str,
     ) -> Result<time_series::TimeSeries, Error> {
-        self.get_time_series(&time_series::Function::Weekly, symbol)
-            .await
+        self.get_time_series(
+            &time_series::Function::Weekly,
+            symbol,
+            time_series::OutputSize::Compact,
+        )
+        .await
     }
 
-    /// Retrieve monthly time series for the specified `symbol` including up to 20 years of historical data.
+    /// Retrieve weekly time series for the specified `symbol` (full data set).
+    pub async fn get_time_series_weekly_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::Weekly,
+            symbol,
+            time_series::OutputSize::Full,
+        )
+        .await
+    }
+
+    /// Retrieve monthly time series for the specified `symbol` (latest 100 data points).
     pub async fn get_time_series_monthly(
         &self,
         symbol: &str,
     ) -> Result<time_series::TimeSeries, Error> {
-        self.get_time_series(&time_series::Function::Monthly, symbol)
-            .await
+        self.get_time_series(
+            &time_series::Function::Monthly,
+            symbol,
+            time_series::OutputSize::Compact,
+        )
+        .await
+    }
+
+    /// Retrieve monthly time series for the specified `symbol` (full data set).
+    pub async fn get_time_series_monthly_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::Monthly,
+            symbol,
+            time_series::OutputSize::Full,
+        )
+        .await
     }
 
     /// Retrieve the exchange rate from the currency specified by `from_currency_code` to the
@@ -79,8 +148,9 @@ impl Client {
         &self,
         function: &time_series::Function,
         symbol: &str,
+        output_size: time_series::OutputSize,
     ) -> Result<time_series::TimeSeries, Error> {
-        let mut params = vec![("symbol", symbol)];
+        let mut params = vec![("symbol", symbol), ("outputsize", output_size.to_string())];
         if let time_series::Function::IntraDay(interval) = function {
             params.push(("interval", interval.to_string()));
         }
