@@ -3,7 +3,6 @@ use crate::api::APIRequestBuilder;
 use crate::error::Error;
 use crate::exchange_rate;
 use crate::time_series;
-use reqwest;
 use std::io::Read;
 
 /// A blocking client for the Alpha Vantage API.

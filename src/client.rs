@@ -2,7 +2,6 @@ use crate::api::{APIRequest, APIRequestBuilder};
 use crate::error::Error;
 use crate::exchange_rate;
 use crate::time_series;
-use reqwest;
 use std::io::Cursor;
 use std::io::Read;
 
@@ -91,7 +90,7 @@ impl Client {
         Ok(result)
     }
 
-    async fn api_call<'a>(&self, request: APIRequest<'a>) -> Result<impl Read, Error> {
+    async fn api_call(&self, request: APIRequest<'_>) -> Result<impl Read, Error> {
         let response = self.client.execute(request.into()).await?;
         let status = response.status();
         if status != reqwest::StatusCode::OK {
