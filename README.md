@@ -1,8 +1,8 @@
 # alphavantage
 
-[![Build Status](https://travis-ci.org/asmarques/alphavantage.svg)](https://travis-ci.org/asmarques/alphavantage)
 [![Crate](https://img.shields.io/crates/v/alphavantage.svg)](https://crates.io/crates/alphavantage)
 [![Documentation](https://docs.rs/alphavantage/badge.svg)](https://docs.rs/alphavantage)
+![Build Status](https://github.com/asmarques/alphavantage/workflows/Continuous%20integration/badge.svg)
 
 A Rust client for the [Alpha Vantage](https://www.alphavantage.co) API.
 
