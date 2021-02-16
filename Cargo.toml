@@ -13,7 +13,7 @@ edition = "2018"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.10", default_features = false }
+reqwest = { version = "0.11", default_features = false }
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.4"
 derive_more = "0.99"
@@ -26,4 +26,4 @@ native-tls = ["reqwest/native-tls"]
 
 [dev-dependencies]
 structopt = "0.2"
-tokio = { version = "0.2", features = ["macros"] }
+tokio = { version = "1.2.0", features = ["macros"] }
