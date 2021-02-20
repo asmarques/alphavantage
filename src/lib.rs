@@ -9,7 +9,7 @@
 //! - [TIME_SERIES_MONTHLY](https://www.alphavantage.co/documentation/#monthly)
 //! - [CURRENCY_EXCHANGE_RATE](https://www.alphavantage.co/documentation/#crypto-exchange)
 //!
-//! The default [`alphavantage::Client`](client) is asynchronous but a
+//! The default [Client] is asynchronous but a
 //! blocking client is also available through the optional `blocking` feature.
 
 mod api;
