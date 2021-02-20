@@ -1,6 +1,6 @@
 [package]
 name = "alphavantage"
-version = "0.6.0"
+version = "0.7.0"
 description = "Alpha Vantage API client"
 authors = ["António Marques <me@antoniomarques.eu>"]
 license = "MIT/Apache-2.0"
