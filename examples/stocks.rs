@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = args
         .token
         .or_else(|| env::var(TOKEN_ENV_KEY).ok())
-        .ok_or_else(|| "missing token")?;
+        .ok_or("missing token")?;
 
     let symbol = &args.symbol;
     let client = Client::new(&token);
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "daily" => client.get_time_series_daily(symbol).await,
         "weekly" => client.get_time_series_weekly(symbol).await,
         "monthly" => client.get_time_series_monthly(symbol).await,
-        _ => Err(format!("unknown period {}", args.period))?,
+        _ => return Err(format!("unknown period {}", args.period).into()),
     }?;
 
     println!(
