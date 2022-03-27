@@ -41,7 +41,7 @@ impl<'a> APIRequest<'a> {
     }
 
     fn url(&self) -> Url {
-        let mut url = Url::parse(&URL_ENDPOINT).unwrap();
+        let mut url = Url::parse(URL_ENDPOINT).unwrap();
         {
             let mut query = url.query_pairs_mut();
             query.append_pair("function", self.function);
