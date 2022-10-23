@@ -25,5 +25,5 @@ rustls = ["reqwest/rustls-tls"]
 native-tls = ["reqwest/native-tls"]
 
 [dev-dependencies]
-structopt = "0.2"
+clap = { version = "4", features = ["derive"] }
 tokio = { version = "1.2.0", features = ["macros", "rt-multi-thread"] }

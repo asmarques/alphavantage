@@ -1,26 +1,27 @@
 use alphavantage::time_series::IntradayInterval;
 use alphavantage::Client;
+use clap::Parser;
 use std::env;
-use structopt::StructOpt;
 
 const TOKEN_ENV_KEY: &str = "ALPHAVANTAGE_TOKEN";
 
-#[derive(StructOpt)]
+#[derive(Parser, Debug)]
+#[command(about = "Get stock prices.")]
 struct Cli {
-    #[structopt(
-        short = "t",
-        long = "token",
-        help = "API token (can use the ALPHAVANTAGE_TOKEN env var instead)"
+    #[arg(
+        short,
+        long,
+        help = "API token (ALPHAVANTAGE_TOKEN env var can be used instead)"
     )]
     token: Option<String>,
-    #[structopt(help = "period (1min, 5min, 15min, 30min, hourly, daily, weekly or monthly)")]
+    #[arg(help = "Period (1min, 5min, 15min, 30min, hourly, daily, weekly or monthly)")]
     period: String,
-    #[structopt(help = "stock symbol (e.g. AAPL)")]
+    #[arg(help = "Stock symbol (e.g. AAPL)")]
     symbol: String,
 }
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Cli::from_args();
+    let args = Cli::parse();
     let token = args
         .token
         .or_else(|| env::var(TOKEN_ENV_KEY).ok())
