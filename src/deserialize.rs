@@ -26,7 +26,8 @@ pub(crate) fn parse_date(value: &str, time_zone: Tz) -> Result<DateTime<Tz>, Err
             .single()
             .ok_or_else(|| Error::ParsingError("unable to parse datetime".into()))
     } else {
-        let datetime = NaiveDate::parse_from_str(value, DATE_FORMAT).map(|d| d.and_hms(0, 0, 0))?;
+        let datetime = NaiveDate::parse_from_str(value, DATE_FORMAT)
+            .map(|d| d.and_hms_opt(0, 0, 0).unwrap())?;
         time_zone
             .from_local_datetime(&datetime)
             .single()
