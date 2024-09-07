@@ -1,20 +1,25 @@
-use derive_more::Display;
-
 /// Set of errors which can occur when calling the API.
-#[derive(Display, Debug)]
+#[derive(Debug)]
 pub enum Error {
     /// Error establishing a network connection.
-    #[display(fmt = "connection error: {}", _0)]
     ConnectionError(String),
     /// HTTP error returned by the API.
-    #[display(fmt = "server returned HTTP status code {}", _0)]
     ServerError(u16),
     /// Error parsing the API response.
-    #[display(fmt = "parsing error: {}", _0)]
     ParsingError(String),
     /// Error returned by the API.
-    #[display(fmt = "API error: {}", _0)]
     APIError(String),
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::ConnectionError(e) => write!(f, "connection error: {}", e),
+            Error::ServerError(e) => write!(f, "server returned HTTP status code {}", e),
+            Error::ParsingError(e) => write!(f, "parsing error: {}", e),
+            Error::APIError(e) => write!(f, "API error: {}", e),
+        }
+    }
 }
 
 impl std::error::Error for Error {}
