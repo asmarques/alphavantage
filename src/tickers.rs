@@ -42,9 +42,9 @@ pub(crate) mod parser{
     use std::io::Read;
     use chrono::{FixedOffset, NaiveDateTime, TimeZone, Utc};
     
-    fn parse_offset(offset: &str) -> Option<i32> {
+    fn parse_offset(offset: &str) -> Option<f64> {
         if let Some(sign) = offset.get(3..4) {
-            if let Ok(hours) = offset[4..].parse::<i32>() {
+            if let Ok(hours) = offset[4..].parse::<f64>() {
                 return match sign {
                     "+" => Some(hours),
                     "-" => Some(-hours),
@@ -58,7 +58,11 @@ pub(crate) mod parser{
     fn get_utc_offset_from_str(offset: &str) -> Result<FixedOffset, Error> {
         let offset = parse_offset(offset)
             .ok_or(Error::ParsingError("error parsing offset".into()))?;
-        Ok(FixedOffset::east_opt(offset * 60 * 60).unwrap())
+
+        let offset_hours = offset.trunc() as i32; // Extract the integer part
+        let offset_minutes = ((offset.fract() * 60.0).round()) as i32; // Convert fractional part to minutes
+        let total_offset_seconds = offset_hours * 3600 + offset_minutes * 60;
+        Ok(FixedOffset::east_opt(total_offset_seconds).unwrap())
     }
 
     #[derive(Debug, Deserialize, Clone)]
@@ -145,6 +149,26 @@ mod tests {
             timezone: FixedOffset::east_opt(1*60*60).unwrap(),
             currency: "GBX".into(),
             match_score: 0.7273
+        });
+    }
+
+    #[test]
+    fn parse_tencent(){
+        let data: &[u8] = include_bytes!("../tests/json/ticker_search_tencent.json");
+        let results = parser::parse(None, BufReader::new(data))
+            .expect("failed to parse tencent search results");
+        assert_eq!(results.query, None);
+        assert_eq!(results.entries.len(), 6);
+        assert_eq!(results.entries[0], Entry{
+            symbol: "NNND.FRK".into(),
+            name: "Tencent Holdings Ltd".into(),
+            stock_type: "Equity".into(),
+            region: "Frankfurt".into(),
+            market_open: parse_time("08:00").unwrap(),
+            market_close: parse_time("20:00").unwrap(),
+            timezone: FixedOffset::east_opt(2*60*60).unwrap(),
+            currency: "EUR".into(),
+            match_score: 0.5185
         });
     }
 }
