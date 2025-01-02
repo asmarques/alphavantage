@@ -21,5 +21,6 @@ mod error;
 pub mod blocking;
 pub mod exchange_rate;
 pub mod time_series;
+pub mod tickers;
 pub use crate::client::Client;
 pub use crate::error::Error;
