@@ -13,6 +13,7 @@ Currently supports the following operations:
 - [TIME_SERIES_WEEKLY](https://www.alphavantage.co/documentation/#weekly)
 - [TIME_SERIES_MONTHLY](https://www.alphavantage.co/documentation/#monthly)
 - [CURRENCY_EXCHANGE_RATE](https://www.alphavantage.co/documentation/#crypto-exchange)
+- [SYMBOL_SEARCH](https://www.alphavantage.co/documentation/#symbolsearch)
 
 The default client is asynchronous but a blocking client is also available through the optional `blocking` feature.
 
