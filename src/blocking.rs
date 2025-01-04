@@ -102,6 +102,19 @@ impl Client {
         Ok(result)
     }
 
+    /// Retrieve a list of ticker symbols that match the specified `query`.
+    pub fn get_tickers(
+        &self,
+        query: &str,
+    ) -> Result<tickers::SearchResults, Error> {
+        let function = "SYMBOL_SEARCH";
+        let params = vec![("keywords", query)];
+        let request = self.builder.create(function, &params);
+        let response = self.api_call(request)?;
+        let result = tickers::parser::parse(Some(query.to_string()), response)?;
+        Ok(result)
+    }
+
     fn get_time_series(
         &self,
         function: &time_series::Function,
