@@ -107,7 +107,7 @@ pub(crate) mod parser {
                     region: entry.region,
                     market_open: parse_time(&entry.market_open)?,
                     market_close: parse_time(&entry.market_close)?,
-                    timezone: timezone,
+                    timezone,
                     currency: entry.currency,
                     match_score: entry.match_score,
                 };
@@ -120,7 +120,7 @@ pub(crate) mod parser {
         }
         let entries: Vec<Entry> = entries.into_iter().map(|entry| entry.unwrap()).collect();
         Ok(SearchResults {
-            query: query,
+            query,
             entries,
         })
     }
