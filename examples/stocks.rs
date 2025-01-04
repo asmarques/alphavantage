@@ -30,6 +30,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let symbol = &args.symbol;
     let client = Client::new(&token);
 
+    let tickers = client.get_tickers(symbol).await?;
+    let ticker = tickers
+        .entries
+        .into_iter()
+        .find(|t| t.symbol == *symbol)
+        .ok_or_else(|| format!("ticker for symbol not found: {}", symbol))?;
+
+    println!("{}: {}", ticker.symbol, ticker.name);
+    println!(
+        "{} - {} ({})",
+        ticker.stock_type, ticker.region, ticker.currency
+    );
+
     let time_series = match args.period.as_str() {
         "1min" => {
             client
@@ -62,17 +75,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => return Err(format!("unknown period {}", args.period).into()),
     }?;
 
-    println!(
-        "{} (updated: {})\n",
-        time_series.symbol, time_series.last_refreshed
-    );
+    println!("Updated: {}\n", time_series.last_refreshed);
     for entry in time_series.entries {
-        println!("{}:", entry.date);
-        println!("  open: {}", entry.open);
-        println!("  high: {}", entry.high);
-        println!("  low: {}", entry.low);
-        println!("  close: {}", entry.close);
-        println!("  volume: {}", entry.volume);
+        let date = match args.period.as_str() {
+            "daily" | "weekly" | "monthly" => entry.date.format("%Y-%m-%d"),
+            _ => entry.date.format("%Y-%m-%d %H:%M %:z"),
+        };
+        println!(
+            "{}: open = {}, close = {}, high = {}, low = {}, volume = {}",
+            date, entry.open, entry.close, entry.high, entry.low, entry.volume
+        );
     }
     Ok(())
 }
