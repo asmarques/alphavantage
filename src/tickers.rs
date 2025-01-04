@@ -4,32 +4,32 @@ use chrono::{FixedOffset, NaiveTime};
 #[derive(Debug, Clone)]
 pub struct SearchResults {
     /// The query that was searched.
-    query: Option<String>,
+    pub query: Option<String>,
     /// The list of matches, sorted by highest match score to lowest.
-    entries: Vec<Entry>,
+    pub entries: Vec<Entry>,
 }
 
 /// Represents a set of values for a ticker
 #[derive(Debug, PartialEq, Clone)]
 pub struct Entry {
     /// Symbol.
-    symbol: String,
+    pub symbol: String,
     /// Name.
-    name: String,
+    pub name: String,
     /// Type.
-    stock_type: String,
+    pub stock_type: String,
     /// Region.
-    region: String,
+    pub region: String,
     /// Market open time.
-    market_open: NaiveTime,
+    pub market_open: NaiveTime,
     /// Market close time.
-    market_close: NaiveTime,
+    pub market_close: NaiveTime,
     /// Timezone.
-    timezone: FixedOffset,
+    pub timezone: FixedOffset,
     /// Currency.
-    currency: String,
+    pub currency: String,
     /// Match score.
-    match_score: f64,
+    pub match_score: f64,
 }
 
 pub(crate) mod parser {
@@ -37,7 +37,7 @@ pub(crate) mod parser {
     use crate::deserialize::{from_str, parse_time};
     use crate::error::Error;
     use chrono::FixedOffset;
-    
+
     use serde::Deserialize;
     use std::io::Read;
 
@@ -119,10 +119,7 @@ pub(crate) mod parser {
             return Err(entries.into_iter().find_map(|entry| entry.err()).unwrap());
         }
         let entries: Vec<Entry> = entries.into_iter().map(|entry| entry.unwrap()).collect();
-        Ok(SearchResults {
-            query,
-            entries,
-        })
+        Ok(SearchResults { query, entries })
     }
 }
 
