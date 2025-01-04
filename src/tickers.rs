@@ -1,5 +1,4 @@
-use chrono::{DateTime, FixedOffset, NaiveTime};
-use chrono_tz::Tz;
+use chrono::{FixedOffset, NaiveTime};
 
 /// Respresent a set of search results.
 #[derive(Debug, Clone)]
@@ -35,10 +34,10 @@ pub struct Entry {
 
 pub(crate) mod parser {
     use super::*;
-    use crate::deserialize::{from_str, parse_date, parse_time, DATETIME_FORMAT, TIME_FORMAT};
+    use crate::deserialize::{from_str, parse_time};
     use crate::error::Error;
-    use chrono::{FixedOffset, NaiveDateTime, TimeZone, Utc};
-    use core::time;
+    use chrono::FixedOffset;
+    
     use serde::Deserialize;
     use std::io::Read;
 
