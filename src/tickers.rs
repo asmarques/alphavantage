@@ -129,6 +129,8 @@ mod tests {
     use crate::deserialize::parse_time;
     use std::io::BufReader;
 
+    const HOUR: i32 = 3600;
+
     #[test]
     fn parse_tesco() {
         let data: &[u8] = include_bytes!("../tests/json/ticker_search_tesco.json");
@@ -145,7 +147,7 @@ mod tests {
                 region: "United Kingdom".into(),
                 market_open: parse_time("08:00").unwrap(),
                 market_close: parse_time("16:30").unwrap(),
-                timezone: FixedOffset::east_opt(1 * 60 * 60).unwrap(),
+                timezone: FixedOffset::east_opt(HOUR).unwrap(),
                 currency: "GBX".into(),
                 match_score: 0.7273
             }
@@ -168,7 +170,7 @@ mod tests {
                 region: "Frankfurt".into(),
                 market_open: parse_time("08:00").unwrap(),
                 market_close: parse_time("20:00").unwrap(),
-                timezone: FixedOffset::east_opt(2 * 60 * 60).unwrap(),
+                timezone: FixedOffset::east_opt(2 * HOUR).unwrap(),
                 currency: "EUR".into(),
                 match_score: 0.5185
             }
