@@ -7,6 +7,7 @@ use std::str::FromStr;
 
 pub(crate) const DATETIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 pub(crate) const DATE_FORMAT: &str = "%Y-%m-%d";
+pub(crate) const TIME_FORMAT: &str = "%H:%M";
 
 pub(crate) fn from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
@@ -33,4 +34,8 @@ pub(crate) fn parse_date(value: &str, time_zone: Tz) -> Result<DateTime<Tz>, Err
             .single()
             .ok_or_else(|| Error::ParsingError("unable to parse date".into()))
     }
+}
+
+pub(crate) fn parse_time(value: &str) -> Result<NaiveTime, Error> {
+    NaiveTime::parse_from_str(value, TIME_FORMAT).map_err(|_| Error::ParsingError("unable to parse time".into()))
 }

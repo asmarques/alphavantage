@@ -1,0 +1,70 @@
+{
+    "bestMatches": [
+        {
+            "1. symbol": "NNND.FRK",
+            "2. name": "Tencent Holdings Ltd",
+            "3. type": "Equity",
+            "4. region": "Frankfurt",
+            "5. marketOpen": "08:00",
+            "6. marketClose": "20:00",
+            "7. timezone": "UTC+02",
+            "8. currency": "EUR",
+            "9. matchScore": "0.5185"
+        },
+        {
+            "1. symbol": "TCEHY",
+            "2. name": "Tencent Holdings Ltd",
+            "3. type": "Equity",
+            "4. region": "United States",
+            "5. marketOpen": "09:30",
+            "6. marketClose": "16:00",
+            "7. timezone": "UTC-04",
+            "8. currency": "USD",
+            "9. matchScore": "0.5185"
+        },
+        {
+            "1. symbol": "TCTZF",
+            "2. name": "Tencent Holdings Ltd",
+            "3. type": "Equity",
+            "4. region": "United States",
+            "5. marketOpen": "09:30",
+            "6. marketClose": "16:00",
+            "7. timezone": "UTC-04",
+            "8. currency": "USD",
+            "9. matchScore": "0.5185"
+        },
+        {
+            "1. symbol": "NNN1.FRK",
+            "2. name": "Tencent Holdings Ltd ADR",
+            "3. type": "Equity",
+            "4. region": "Frankfurt",
+            "5. marketOpen": "08:00",
+            "6. marketClose": "20:00",
+            "7. timezone": "UTC+02",
+            "8. currency": "EUR",
+            "9. matchScore": "0.4516"
+        },
+        {
+            "1. symbol": "TME",
+            "2. name": "Tencent Music Entertainment Group",
+            "3. type": "Equity",
+            "4. region": "United States",
+            "5. marketOpen": "09:30",
+            "6. marketClose": "16:00",
+            "7. timezone": "UTC-04",
+            "8. currency": "USD",
+            "9. matchScore": "0.4000"
+        },
+        {
+            "1. symbol": "63TA.FRK",
+            "2. name": "Tencent Music Entertainment Group",
+            "3. type": "Equity",
+            "4. region": "Frankfurt",
+            "5. marketOpen": "08:00",
+            "6. marketClose": "20:00",
+            "7. timezone": "UTC+02",
+            "8. currency": "EUR",
+            "9. matchScore": "0.3500"
+        }
+    ]
+}
