@@ -1,7 +1,7 @@
 use crate::api::{APIRequest, APIRequestBuilder};
 use crate::error::Error;
-use crate::{exchange_rate, tickers};
 use crate::time_series;
+use crate::{exchange_rate, tickers};
 use std::io::Cursor;
 use std::io::Read;
 
@@ -145,10 +145,7 @@ impl Client {
     }
 
     /// Retrieve a list of ticker symbols that match the specified `query`.
-    pub async fn get_tickers(
-        &self,
-        query: &str,
-    ) -> Result<tickers::SearchResults, Error> {
+    pub async fn get_tickers(&self, query: &str) -> Result<tickers::SearchResults, Error> {
         let function = "SYMBOL_SEARCH";
         let params = vec![("keywords", query)];
         let request = self.builder.create(function, &params);
