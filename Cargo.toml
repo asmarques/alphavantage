@@ -22,6 +22,7 @@ default = ["reqwest/native-tls"]
 blocking = ["reqwest/blocking"]
 rustls = ["reqwest/rustls-tls"]
 native-tls = ["reqwest/native-tls"]
+cached = []
 
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }

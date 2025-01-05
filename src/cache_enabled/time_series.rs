@@ -1,69 +1,27 @@
 //! Time series related operations
-use chrono::DateTime;
-use chrono_tz::Tz;
-use serde::Deserialize;
-use std::convert::From;
-
-#[derive(Debug)]
-pub(crate) enum OutputSize {
-    Compact,
-    Full,
-}
-
-impl OutputSize {
-    pub(crate) fn to_string(&self) -> &'static str {
-        use self::OutputSize::*;
-        match self {
-            Compact => "compact",
-            Full => "full",
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-/// Represents the interval for an intraday time series.
-pub enum IntradayInterval {
-    /// 1 minute.
-    OneMinute,
-    /// 5 minutes.
-    FiveMinutes,
-    /// 15 minutes.
-    FifteenMinutes,
-    /// 30 minutes.
-    ThirtyMinutes,
-    /// 60 minutes.
-    SixtyMinutes,
-}
-
-impl IntradayInterval {
-    pub fn to_string(self) -> &'static str {
-        use self::IntradayInterval::*;
-        match self {
-            OneMinute => "1min",
-            FiveMinutes => "5min",
-            FifteenMinutes => "15min",
-            ThirtyMinutes => "30min",
-            SixtyMinutes => "60min",
-        }
-    }
-}
+use chrono::{DateTime, FixedOffset};
+use serde::{Deserialize, Serialize};
 
 /// Represents a time series for a given symbol.
-#[derive(Debug, Clone)]
+/// 
+/// Uses FixedOffset for the date to allow for serialization.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeSeries {
     /// Symbol the time series refers to.
     pub symbol: String,
     /// Date the information was last refreshed at.
-    pub last_refreshed: DateTime<Tz>,
+    pub last_refreshed: DateTime<FixedOffset>,
     /// Entries in the time series, sorted by ascending dates.
     pub entries: Vec<Entry>,
 }
 
 /// Represents a set of values for an equity for a given period in the time series.
-#[derive(Debug, PartialEq, Clone)]
+/// 
+/// Uses FixedOffset for the date to allow for serialization.
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Entry {
     /// Date.
-    pub date: DateTime<Tz>,
+    pub date: DateTime<FixedOffset>,
     /// Open value.
     pub open: f64,
     /// High value.
@@ -76,57 +34,15 @@ pub struct Entry {
     pub volume: u64,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) enum Function {
-    IntraDay(IntradayInterval),
-    Daily,
-    Weekly,
-    Monthly,
-}
-
-impl From<&'_ Function> for &'static str {
-    fn from(function: &'_ Function) -> Self {
-        use Function::*;
-        match function {
-            IntraDay(_) => "TIME_SERIES_INTRADAY",
-            Daily => "TIME_SERIES_DAILY",
-            Weekly => "TIME_SERIES_WEEKLY",
-            Monthly => "TIME_SERIES_MONTHLY",
-        }
-    }
-}
-
 pub(crate) mod parser {
     use super::*;
-    use crate::deserialize::{from_str, parse_date};
+    use crate::cache_enabled::tz_datetime_to_fixed_offset_datetime;
+    use crate::deserialize::parse_date;
     use crate::error::Error;
+    use crate::time_series::parser::TimeSeriesHelper;
+    use crate::time_series::Function;
     use chrono_tz::Tz;
-    use std::collections::HashMap;
     use std::io::Read;
-
-    #[derive(Debug, Deserialize)]
-    pub(crate) struct EntryHelper {
-        #[serde(rename = "1. open", deserialize_with = "from_str")]
-        pub open: f64,
-        #[serde(rename = "2. high", deserialize_with = "from_str")]
-        pub high: f64,
-        #[serde(rename = "3. low", deserialize_with = "from_str")]
-        pub low: f64,
-        #[serde(rename = "4. close", deserialize_with = "from_str")]
-        pub close: f64,
-        #[serde(rename = "5. volume", deserialize_with = "from_str")]
-        pub volume: u64,
-    }
-
-    #[derive(Debug, Deserialize)]
-    pub struct TimeSeriesHelper {
-        #[serde(rename = "Error Message")]
-        pub(crate) error: Option<String>,
-        #[serde(rename = "Meta Data")]
-        pub(crate) metadata: Option<HashMap<String, String>>,
-        #[serde(flatten)]
-        pub(crate) time_series: Option<HashMap<String, HashMap<String, EntryHelper>>>,
-    }
 
     pub(crate) fn parse(function: &Function, reader: impl Read) -> Result<TimeSeries, Error> {
         let helper: TimeSeriesHelper = serde_json::from_reader(reader)?;
@@ -181,7 +97,7 @@ pub(crate) mod parser {
         for (d, v) in time_series.iter() {
             let date = parse_date(d, time_zone)?;
             let entry = Entry {
-                date,
+                date: tz_datetime_to_fixed_offset_datetime(date),
                 open: v.open,
                 high: v.high,
                 low: v.low,
@@ -195,7 +111,7 @@ pub(crate) mod parser {
 
         let time_series = TimeSeries {
             symbol,
-            last_refreshed,
+            last_refreshed: tz_datetime_to_fixed_offset_datetime(last_refreshed),
             entries,
         };
         Ok(time_series)
@@ -205,13 +121,13 @@ pub(crate) mod parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::deserialize::parse_date;
+    use crate::{cache_enabled::tz_datetime_to_fixed_offset_datetime, deserialize::parse_date, time_series::{Function, IntradayInterval}};
     use chrono_tz::US::Eastern;
     use std::io::BufReader;
 
     #[test]
     fn parse_intraday() {
-        let data: &[u8] = include_bytes!("../tests/json/time_series_intraday_1min.json");
+        let data: &[u8] = include_bytes!("../../tests/json/time_series_intraday_1min.json");
         let time_series = parser::parse(
             &Function::IntraDay(IntradayInterval::OneMinute),
             BufReader::new(data),
@@ -221,7 +137,7 @@ mod tests {
         assert_eq!(
             time_series.entries[0],
             Entry {
-                date: parse_date("2018-06-01 14:21:00", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2018-06-01 14:21:00", Eastern).unwrap()),
                 open: 100.3975,
                 high: 100.4558,
                 low: 100.3850,
@@ -232,7 +148,7 @@ mod tests {
         assert_eq!(
             time_series.entries[99],
             Entry {
-                date: parse_date("2018-06-01 16:00:00", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2018-06-01 16:00:00", Eastern).unwrap()),
                 open: 100.6150,
                 high: 100.8100,
                 low: 100.5900,
@@ -244,14 +160,14 @@ mod tests {
 
     #[test]
     fn parse_daily() {
-        let data: &[u8] = include_bytes!("../tests/json/time_series_daily.json");
+        let data: &[u8] = include_bytes!("../../tests/json/time_series_daily.json");
         let time_series =
             parser::parse(&Function::Daily, BufReader::new(data)).expect("failed to parse entries");
         assert_eq!(time_series.entries.len(), 100);
         assert_eq!(
             time_series.entries[0],
             Entry {
-                date: parse_date("2018-01-17", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2018-01-17", Eastern).unwrap()),
                 open: 89.0800,
                 high: 90.2800,
                 low: 88.7500,
@@ -262,7 +178,7 @@ mod tests {
         assert_eq!(
             time_series.entries[99],
             Entry {
-                date: parse_date("2018-06-08", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2018-06-08", Eastern).unwrap()),
                 open: 101.0924,
                 high: 101.9500,
                 low: 100.5400,
@@ -274,14 +190,14 @@ mod tests {
 
     #[test]
     fn parse_weekly() {
-        let data: &[u8] = include_bytes!("../tests/json/time_series_weekly.json");
+        let data: &[u8] = include_bytes!("../../tests/json/time_series_weekly.json");
         let time_series = parser::parse(&Function::Weekly, BufReader::new(data))
             .expect("failed to parse entries");
         assert_eq!(time_series.entries.len(), 961);
         assert_eq!(
             time_series.entries[0],
             Entry {
-                date: parse_date("2000-01-14", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2000-01-14", Eastern).unwrap()),
                 open: 113.4400,
                 high: 114.2500,
                 low: 101.5000,
@@ -292,7 +208,7 @@ mod tests {
         assert_eq!(
             time_series.entries[960],
             Entry {
-                date: parse_date("2018-06-08", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2018-06-08", Eastern).unwrap()),
                 open: 101.2600,
                 high: 102.6900,
                 low: 100.3800,
@@ -304,14 +220,14 @@ mod tests {
 
     #[test]
     fn parse_monthly() {
-        let data: &[u8] = include_bytes!("../tests/json/time_series_monthly.json");
+        let data: &[u8] = include_bytes!("../../tests/json/time_series_monthly.json");
         let time_series = parser::parse(&Function::Monthly, BufReader::new(data))
             .expect("failed to parse entries");
         assert_eq!(time_series.entries.len(), 221);
         assert_eq!(
             time_series.entries[0],
             Entry {
-                date: parse_date("2000-02-29", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2000-02-29", Eastern).unwrap()),
                 open: 98.5000,
                 high: 110.0000,
                 low: 88.1200,
@@ -322,7 +238,7 @@ mod tests {
         assert_eq!(
             time_series.entries[220],
             Entry {
-                date: parse_date("2018-06-08", Eastern).unwrap(),
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2018-06-08", Eastern).unwrap()),
                 open: 99.2798,
                 high: 102.6900,
                 low: 99.1700,
