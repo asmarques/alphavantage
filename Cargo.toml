@@ -16,13 +16,15 @@ serde_json = "1.0"
 reqwest = { version = "0.12", default-features = false }
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.8"
+disk_cache = {version = "0.1.0", optional = true, path = "../disk_cache"}
+tokio = { version = "1", features = ["full"] }
 
 [features]
 default = ["reqwest/native-tls"]
 blocking = ["reqwest/blocking"]
 rustls = ["reqwest/rustls-tls"]
 native-tls = ["reqwest/native-tls"]
-cached = []
+cached = ["disk_cache"]
 
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }

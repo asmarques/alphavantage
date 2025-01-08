@@ -1,10 +1,13 @@
 use crate::api::{APIRequest, APIRequestBuilder};
 use crate::error::Error;
 use crate::time_series::{Function, IntradayInterval, OutputSize};
-use crate::{exchange_rate, tickers};
+use crate::cache_enabled::tickers;
+use crate::cache_enabled::exchange_rate;
 use crate::cache_enabled::time_series;
 use std::io::Cursor;
 use std::io::Read;
+use disk_cache::cache_async;
+use tokio;
 
 /// An asynchronous client for the Alpha Vantage API, using cacheable data structures
 pub struct Client {
@@ -22,6 +25,7 @@ impl Client {
     }
 
     /// Retrieve intraday time series for the specified `symbol` updated in realtime (latest 100 data points).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_intraday/{symbol}_{interval:?}", invalidate_rate = 1200)]
     pub async fn get_time_series_intraday(
         &self,
         symbol: &str,
@@ -36,6 +40,7 @@ impl Client {
     }
 
     /// Retrieve intraday time series for the specified `symbol` updated in realtime (full data set).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_intraday_full/{symbol}_{interval:?}", invalidate_rate = 1200)]
     pub async fn get_time_series_intraday_full(
         &self,
         symbol: &str,
@@ -50,6 +55,7 @@ impl Client {
     }
 
     /// Retrieve daily time series for the specified `symbol` (latest 100 data points).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_daily/{symbol}", invalidate_rate = 86400)]
     pub async fn get_time_series_daily(
         &self,
         symbol: &str,
@@ -63,6 +69,7 @@ impl Client {
     }
 
     /// Retrieve daily time series for the specified `symbol` (full data set).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_daily_full/{symbol}", invalidate_rate = 86400)]
     pub async fn get_time_series_daily_full(
         &self,
         symbol: &str,
@@ -76,6 +83,7 @@ impl Client {
     }
 
     /// Retrieve weekly time series for the specified `symbol` (latest 100 data points).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_weekly/{symbol}", invalidate_rate = 604800)]
     pub async fn get_time_series_weekly(
         &self,
         symbol: &str,
@@ -89,6 +97,7 @@ impl Client {
     }
 
     /// Retrieve weekly time series for the specified `symbol` (full data set).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_weekly_full/{symbol}", invalidate_rate = 604800)]
     pub async fn get_time_series_weekly_full(
         &self,
         symbol: &str,
@@ -102,6 +111,7 @@ impl Client {
     }
 
     /// Retrieve monthly time series for the specified `symbol` (latest 100 data points).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_monthly/{symbol}", invalidate_rate = 2592000)]
     pub async fn get_time_series_monthly(
         &self,
         symbol: &str,
@@ -115,6 +125,7 @@ impl Client {
     }
 
     /// Retrieve monthly time series for the specified `symbol` (full data set).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_monthly_full/{symbol}", invalidate_rate = 2592000)]
     pub async fn get_time_series_monthly_full(
         &self,
         symbol: &str,
@@ -129,6 +140,7 @@ impl Client {
 
     /// Retrieve the exchange rate from the currency specified by `from_currency_code` to the
     /// currency specified by `to_currency_code`.
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_exchange_rate/{from_currency_code}_{to_currency_code}", invalidate_rate = 86400)]
     pub async fn get_exchange_rate(
         &self,
         from_currency_code: &str,
@@ -146,6 +158,7 @@ impl Client {
     }
 
     /// Retrieve a list of ticker symbols that match the specified `query`.
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_tickers/{query}", invalidate_rate = 86400)]
     pub async fn get_tickers(
         &self,
         query: &str,
