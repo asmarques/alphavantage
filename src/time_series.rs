@@ -1,7 +1,7 @@
 //! Time series related operations
 use chrono::DateTime;
 use chrono_tz::Tz;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::convert::From;
 
 #[derive(Debug)]
@@ -20,7 +20,7 @@ impl OutputSize {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 /// Represents the interval for an intraday time series.
 pub enum IntradayInterval {
     /// 1 minute.
