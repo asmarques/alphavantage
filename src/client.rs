@@ -126,6 +126,58 @@ impl Client {
         .await
     }
 
+    /// Retrieve daily adjusted time series for the specified `symbol` (latest 100 data points).
+    pub async fn get_time_series_daily_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::DailyAdjusted,
+            symbol,
+            time_series::OutputSize::Full,
+        )
+        .await
+    }
+
+    /// Retrieve daily adjusted time series for the specified `symbol` (latest 100 data points).
+    pub async fn get_time_series_daily_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::DailyAdjusted,
+            symbol,
+            time_series::OutputSize::Compact,
+        )
+        .await
+    }
+
+    /// Retrieve weekly adjusted time series for the specified `symbol` (latest 100 data points).
+    pub async fn get_time_series_weekly_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::WeeklyAdjusted,
+            symbol,
+            time_series::OutputSize::Full,
+        )
+        .await
+    }
+
+    /// Retrieve monthly adjusted time series for the specified `symbol` (latest 100 data points).
+    pub async fn get_time_series_monthly_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::MonthlyAdjusted,
+            symbol,
+            time_series::OutputSize::Full,
+        )
+        .await
+    }
+
     /// Retrieve the exchange rate from the currency specified by `from_currency_code` to the
     /// currency specified by `to_currency_code`.
     pub async fn get_exchange_rate(

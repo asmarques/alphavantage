@@ -15,12 +15,13 @@
 mod api;
 mod client;
 mod deserialize;
-mod error;
+pub mod error;
 
 #[cfg(feature = "blocking")]
 pub mod blocking;
 pub mod exchange_rate;
 pub mod tickers;
 pub mod time_series;
+pub mod tickers;
 pub use crate::client::Client;
 pub use crate::error::Error;

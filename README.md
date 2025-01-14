@@ -1,3 +1,8 @@
+# Cached feature
+
+AlphaVantage has limited free tier usibility. The "cache_enabled" feature in this fork relies on the https://github.com/aheschl1/disk_cache_macro
+repo, and caches results to reduce unnececarry network calls.
+
 # alphavantage
 
 [![Crate](https://img.shields.io/crates/v/alphavantage.svg)](https://crates.io/crates/alphavantage)

@@ -1,46 +1,47 @@
-use chrono::{FixedOffset, NaiveTime};
+use chrono::{DateTime, FixedOffset, NaiveTime};
+use chrono_tz::Tz;
 
 /// Respresent a set of search results.
 #[derive(Debug, Clone)]
 pub struct SearchResults {
     /// The query that was searched.
-    pub query: Option<String>,
+    query: Option<String>,
     /// The list of matches, sorted by highest match score to lowest.
-    pub entries: Vec<Entry>,
-}
+    entries: Vec<Entry>,
+} 
 
 /// Represents a set of values for a ticker
 #[derive(Debug, PartialEq, Clone)]
 pub struct Entry {
     /// Symbol.
-    pub symbol: String,
+    symbol: String,
     /// Name.
-    pub name: String,
+    name: String,
     /// Type.
-    pub stock_type: String,
+    stock_type: String,
     /// Region.
-    pub region: String,
+    region: String,
     /// Market open time.
-    pub market_open: NaiveTime,
+    market_open: NaiveTime,
     /// Market close time.
-    pub market_close: NaiveTime,
+    market_close: NaiveTime,
     /// Timezone.
-    pub timezone: FixedOffset,
+    timezone: FixedOffset,
     /// Currency.
-    pub currency: String,
+    currency: String,
     /// Match score.
-    pub match_score: f64,
+    match_score: f64,
 }
 
-pub(crate) mod parser {
+pub(crate) mod parser{
     use super::*;
-    use crate::deserialize::{from_str, parse_time};
+    use crate::deserialize::{from_str, parse_date, parse_time, DATETIME_FORMAT, TIME_FORMAT};
     use crate::error::Error;
-    use chrono::FixedOffset;
-
     use serde::Deserialize;
+    use core::time;
     use std::io::Read;
-
+    use chrono::{FixedOffset, NaiveDateTime, TimeZone, Utc};
+    
     fn parse_offset(offset: &str) -> Option<f64> {
         if let Some(sign) = offset.get(3..4) {
             if let Ok(hours) = offset[4..].parse::<f64>() {
@@ -55,9 +56,8 @@ pub(crate) mod parser {
     }
 
     fn get_utc_offset_from_str(offset: &str) -> Result<FixedOffset, Error> {
-        let offset =
-            parse_offset(offset).ok_or(Error::ParsingError("error parsing offset".into()))?;
 
+        let offset = parse_offset(offset).ok_or(Error::ParsingError("error parsing offset".into()))?;
         let offset_hours = offset.trunc() as i32; // Extract the integer part
         let offset_minutes = ((offset.fract() * 60.0).round()) as i32; // Convert fractional part to minutes
         let total_offset_seconds = offset_hours * 3600 + offset_minutes * 60;
@@ -83,44 +83,46 @@ pub(crate) mod parser {
         #[serde(rename = "8. currency", deserialize_with = "from_str")]
         currency: String,
         #[serde(rename = "9. matchScore", deserialize_with = "from_str")]
-        match_score: f64,
+        match_score: f64
     }
 
     #[derive(Debug, Deserialize)]
     struct SearchResultsHelper {
         #[serde(rename = "bestMatches")]
-        entries: Vec<EntryHelper>,
+        entries: Vec<EntryHelper>
     }
 
-    pub fn parse(query: Option<String>, reader: impl Read) -> Result<SearchResults, Error> {
+    pub fn parse(query: Option<String>, reader: impl Read) -> Result<SearchResults, Error>{
         let helper: SearchResultsHelper = serde_json::from_reader(reader)?;
-        let entries: Vec<Result<Entry, Error>> = helper
-            .entries
+        let entries: Vec<Result<Entry, Error>> = helper.entries
             .clone()
             .into_iter()
-            .map(|entry| -> Result<Entry, Error> {
-                let timezone = get_utc_offset_from_str(&entry.timezone)?;
-                let entry = Entry {
-                    symbol: entry.symbol,
-                    name: entry.name,
-                    stock_type: entry.stock_type,
-                    region: entry.region,
-                    market_open: parse_time(&entry.market_open)?,
-                    market_close: parse_time(&entry.market_close)?,
-                    timezone,
-                    currency: entry.currency,
-                    match_score: entry.match_score,
-                };
-                Ok(entry)
-            })
-            .collect();
+            .map(|entry| -> Result<Entry, Error>{
+            let timezone = get_utc_offset_from_str(&entry.timezone)?;
+            let entry = Entry{
+                symbol: entry.symbol,
+                name: entry.name,
+                stock_type: entry.stock_type,
+                region: entry.region,
+                market_open: parse_time(&entry.market_open)?,
+                market_close: parse_time(&entry.market_close)?,
+                timezone: timezone,
+                currency: entry.currency,
+                match_score: entry.match_score
+            };
+            Ok(entry)
+        }).collect();
         // if there is any error, return the error. map to entrys
-        if entries.iter().any(|entry| entry.is_err()) {
+        if entries.iter().any(|entry| entry.is_err()){
             return Err(entries.into_iter().find_map(|entry| entry.err()).unwrap());
         }
         let entries: Vec<Entry> = entries.into_iter().map(|entry| entry.unwrap()).collect();
-        Ok(SearchResults { query, entries })
+        Ok(SearchResults{
+            query: query,
+            entries
+        })
     }
+   
 }
 
 #[cfg(test)]
@@ -138,42 +140,36 @@ mod tests {
             .expect("failed to parse tesco search results");
         assert_eq!(results.query, None);
         assert_eq!(results.entries.len(), 5);
-        assert_eq!(
-            results.entries[0],
-            Entry {
-                symbol: "TSCO.LON".into(),
-                name: "Tesco PLC".into(),
-                stock_type: "Equity".into(),
-                region: "United Kingdom".into(),
-                market_open: parse_time("08:00").unwrap(),
-                market_close: parse_time("16:30").unwrap(),
-                timezone: FixedOffset::east_opt(HOUR).unwrap(),
-                currency: "GBX".into(),
-                match_score: 0.7273
-            }
-        );
+        assert_eq!(results.entries[0], Entry{
+            symbol: "TSCO.LON".into(),
+            name: "Tesco PLC".into(),
+            stock_type: "Equity".into(),
+            region: "United Kingdom".into(),
+            market_open: parse_time("08:00").unwrap(),
+            market_close: parse_time("16:30").unwrap(),
+            timezone: FixedOffset::east_opt(1*60*60).unwrap(),
+            currency: "GBX".into(),
+            match_score: 0.7273
+        });
     }
 
     #[test]
-    fn parse_tencent() {
+    fn parse_tencent(){
         let data: &[u8] = include_bytes!("../tests/json/ticker_search_tencent.json");
         let results = parser::parse(None, BufReader::new(data))
             .expect("failed to parse tencent search results");
         assert_eq!(results.query, None);
         assert_eq!(results.entries.len(), 6);
-        assert_eq!(
-            results.entries[0],
-            Entry {
-                symbol: "NNND.FRK".into(),
-                name: "Tencent Holdings Ltd".into(),
-                stock_type: "Equity".into(),
-                region: "Frankfurt".into(),
-                market_open: parse_time("08:00").unwrap(),
-                market_close: parse_time("20:00").unwrap(),
-                timezone: FixedOffset::east_opt(2 * HOUR).unwrap(),
-                currency: "EUR".into(),
-                match_score: 0.5185
-            }
-        );
+        assert_eq!(results.entries[0], Entry{
+            symbol: "NNND.FRK".into(),
+            name: "Tencent Holdings Ltd".into(),
+            stock_type: "Equity".into(),
+            region: "Frankfurt".into(),
+            market_open: parse_time("08:00").unwrap(),
+            market_close: parse_time("20:00").unwrap(),
+            timezone: FixedOffset::east_opt(2*60*60).unwrap(),
+            currency: "EUR".into(),
+            match_score: 0.5185
+        });
     }
 }

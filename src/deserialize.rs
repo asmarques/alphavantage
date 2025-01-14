@@ -37,6 +37,5 @@ pub(crate) fn parse_date(value: &str, time_zone: Tz) -> Result<DateTime<Tz>, Err
 }
 
 pub(crate) fn parse_time(value: &str) -> Result<NaiveTime, Error> {
-    NaiveTime::parse_from_str(value, TIME_FORMAT)
-        .map_err(|_| Error::ParsingError("unable to parse time".into()))
+    NaiveTime::parse_from_str(value, TIME_FORMAT).map_err(|_| Error::ParsingError("unable to parse time".into()))
 }
