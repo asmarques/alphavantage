@@ -19,8 +19,6 @@ pub mod error;
 
 #[cfg(feature = "blocking")]
 pub mod blocking;
-#[cfg(feature = "cached")]
-pub mod cache_enabled;
 pub mod exchange_rate;
 pub mod time_series;
 pub mod tickers;

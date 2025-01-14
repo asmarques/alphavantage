@@ -1,10 +1,10 @@
 [package]
 name = "alphavantage"
-version = "0.7.1"
+version = "0.7.2"
 description = "Alpha Vantage API client"
 authors = ["António Marques <me@antoniomarques.eu>"]
 license = "MIT/Apache-2.0"
-repository = "https://github.com/aheschl1/alphavantage"
+repository = "https://github.com/asmarques/alphavantage"
 readme = "README.md"
 keywords = ["finance", "stocks", "alpha", "vantage"]
 categories = ["api-bindings", "web-programming::http-client"]
@@ -16,7 +16,6 @@ serde_json = "1.0"
 reqwest = { version = "0.12", default-features = false }
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.8"
-disk_cache = {version = "0.1.0", optional = true, path = "../disk_cache"}
 tokio = { version = "1", features = ["full"] }
 
 [features]
@@ -24,7 +23,6 @@ default = ["reqwest/native-tls"]
 blocking = ["reqwest/blocking"]
 rustls = ["reqwest/rustls-tls"]
 native-tls = ["reqwest/native-tls"]
-cached = ["disk_cache"]
 
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }
