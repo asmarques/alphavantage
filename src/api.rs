@@ -54,7 +54,7 @@ impl<'a> APIRequest<'a> {
     }
 }
 
-impl<'a> From<APIRequest<'a>> for Request {
+impl From<APIRequest<'_>> for Request {
     fn from(request: APIRequest) -> Self {
         reqwest::Request::new(Method::GET, request.url())
     }

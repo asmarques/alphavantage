@@ -56,9 +56,8 @@ pub(crate) mod parser{
     }
 
     fn get_utc_offset_from_str(offset: &str) -> Result<FixedOffset, Error> {
-        let offset = parse_offset(offset)
-            .ok_or(Error::ParsingError("error parsing offset".into()))?;
 
+        let offset = parse_offset(offset).ok_or(Error::ParsingError("error parsing offset".into()))?;
         let offset_hours = offset.trunc() as i32; // Extract the integer part
         let offset_minutes = ((offset.fract() * 60.0).round()) as i32; // Convert fractional part to minutes
         let total_offset_seconds = offset_hours * 3600 + offset_minutes * 60;
@@ -123,7 +122,7 @@ pub(crate) mod parser{
             entries
         })
     }
-    
+   
 }
 
 #[cfg(test)]
@@ -132,8 +131,10 @@ mod tests {
     use crate::deserialize::parse_time;
     use std::io::BufReader;
 
+    const HOUR: i32 = 3600;
+
     #[test]
-    fn parse_tesco(){
+    fn parse_tesco() {
         let data: &[u8] = include_bytes!("../tests/json/ticker_search_tesco.json");
         let results = parser::parse(None, BufReader::new(data))
             .expect("failed to parse tesco search results");

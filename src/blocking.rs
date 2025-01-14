@@ -139,10 +139,7 @@ impl Client {
     }
 
     /// Retrieve a list of ticker symbols that match the specified `query`.
-    pub fn get_tickers(
-        &self,
-        query: &str,
-    ) -> Result<tickers::SearchResults, Error> {
+    pub fn get_tickers(&self, query: &str) -> Result<tickers::SearchResults, Error> {
         let function = "SYMBOL_SEARCH";
         let params = vec![("keywords", query)];
         let request = self.builder.create(function, &params);

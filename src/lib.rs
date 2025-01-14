@@ -20,6 +20,7 @@ pub mod error;
 #[cfg(feature = "blocking")]
 pub mod blocking;
 pub mod exchange_rate;
+pub mod tickers;
 pub mod time_series;
 pub mod tickers;
 pub use crate::client::Client;
