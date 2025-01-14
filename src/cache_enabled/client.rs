@@ -138,6 +138,90 @@ impl Client {
         .await
     }
 
+    /// Retrieve daily adjusted time series for the specified `symbol` (latest 100 data points).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_daily_adjusted/{symbol}", invalidate_rate = 86400)]
+    pub async fn get_time_series_daily_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &Function::DailyAdjusted,
+            symbol,
+            OutputSize::Compact,
+        )
+        .await
+    }
+
+    /// Retrieve daily adjusted time series for the specified `symbol` (full data set).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_daily_adjusted_full/{symbol}", invalidate_rate = 86400)]
+    pub async fn get_time_series_daily_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &Function::DailyAdjusted,
+            symbol,
+            OutputSize::Full,
+        )
+        .await
+    }
+
+    /// Retrieve weekly adjusted time series for the specified `symbol` (latest 100 data points).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_weekly_adjusted/{symbol}", invalidate_rate = 604800)]
+    pub async fn get_time_series_weekly_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &Function::WeeklyAdjusted,
+            symbol,
+            OutputSize::Compact,
+        )
+        .await
+    }
+
+    /// Retrieve weekly adjusted time series for the specified `symbol` (full data set).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_weekly_adjusted_full/{symbol}", invalidate_rate = 604800)]
+    pub async fn get_time_series_weekly_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &Function::WeeklyAdjusted,
+            symbol,
+            OutputSize::Full,
+        )
+        .await
+    }
+
+    /// Retrieve monthly adjusted time series for the specified `symbol` (latest 100 data points).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_monthly_adjusted/{symbol}", invalidate_rate = 2592000)]
+    pub async fn get_time_series_monthly_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &Function::MonthlyAdjusted,
+            symbol,
+            OutputSize::Compact,
+        )
+        .await
+    }
+
+    /// Retrieve monthly adjusted time series for the specified `symbol` (full data set).
+    #[cache_async(cache_root = "~/.cache/alphavantage/get_time_series_monthly_adjusted_full/{symbol}", invalidate_rate = 2592000)]
+    pub async fn get_time_series_monthly_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &Function::MonthlyAdjusted,
+            symbol,
+            OutputSize::Full,
+        )
+        .await
+    }
+
     /// Retrieve the exchange rate from the currency specified by `from_currency_code` to the
     /// currency specified by `to_currency_code`.
     #[cache_async(cache_root = "~/.cache/alphavantage/get_exchange_rate/{from_currency_code}_{to_currency_code}", invalidate_rate = 86400)]

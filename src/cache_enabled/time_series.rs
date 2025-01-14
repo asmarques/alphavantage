@@ -32,6 +32,15 @@ pub struct Entry {
     pub close: f64,
     /// Trading volume.
     pub volume: u64,
+    /// Adjusted close value.
+    #[serde(default)]
+    pub adjusted_close: Option<f64>,
+    /// Dividend amount.
+    #[serde(default)]
+    pub dividend_amount: Option<f64>,
+    /// Split coefficient.
+    #[serde(default)]
+    pub split_coefficient: Option<f64>,
 }
 
 pub(crate) mod parser {
@@ -39,20 +48,29 @@ pub(crate) mod parser {
     use crate::cache_enabled::tz_datetime_to_fixed_offset_datetime;
     use crate::deserialize::parse_date;
     use crate::error::Error;
-    use crate::time_series::parser::TimeSeriesHelper;
+    use crate::time_series::parser::{EntryHelper, EntryHelperAdjusted, TimeSeriesHelper, TimeSeriesHelperEnum};
     use crate::time_series::Function;
     use chrono_tz::Tz;
     use std::io::Read;
 
     pub(crate) fn parse(function: &Function, reader: impl Read) -> Result<TimeSeries, Error> {
-        let helper: TimeSeriesHelper = serde_json::from_reader(reader)?;
+        let helper = match function {
+            Function::DailyAdjusted | Function::WeeklyAdjusted | Function::MonthlyAdjusted => {
+                let helper: TimeSeriesHelper<EntryHelperAdjusted> = serde_json::from_reader(reader)?;
+                TimeSeriesHelperEnum::Adjusted(helper)
+            }
+            _ => {
+                let helper: TimeSeriesHelper<EntryHelper> = serde_json::from_reader(reader)?;
+                TimeSeriesHelperEnum::Regular(helper)
+            }
+        };
 
-        if let Some(error) = helper.error {
-            return Err(Error::APIError(error));
+        if let Some(error) = helper.error() {
+            return Err(Error::APIError(error.clone()));
         }
 
         let metadata = helper
-            .metadata
+            .metadata()
             .ok_or_else(|| Error::ParsingError("missing metadata".into()))?;
 
         let symbol = metadata
@@ -62,8 +80,8 @@ pub(crate) mod parser {
 
         let time_zone_key = match function {
             Function::IntraDay(_) => "6. Time Zone",
-            Function::Daily => "5. Time Zone",
-            Function::Weekly | Function::Monthly => "4. Time Zone",
+            Function::Daily | Function::DailyAdjusted => "5. Time Zone",
+            Function::Weekly | Function::Monthly | Function::WeeklyAdjusted | Function::MonthlyAdjusted => "4. Time Zone",
         };
 
         let time_zone: Tz = metadata
@@ -77,34 +95,69 @@ pub(crate) mod parser {
             .ok_or_else(|| Error::ParsingError("missing last refreshed".into()))
             .map(|v| parse_date(v, time_zone))??;
 
-        let time_series_key = match function {
-            Function::IntraDay(interval) => format!("Time Series ({})", interval.to_string()),
-            Function::Daily => "Time Series (Daily)".to_string(),
-            Function::Weekly => "Weekly Time Series".to_string(),
-            Function::Monthly => "Monthly Time Series".to_string(),
-        };
-
-        let time_series_map = helper
-            .time_series
-            .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
-
-        let time_series = time_series_map
-            .get(&time_series_key)
-            .ok_or_else(|| Error::ParsingError("missing requested time series".into()))?;
+            let time_series_key = match function {
+                Function::IntraDay(interval) => format!("Time Series ({})", interval.to_string()),
+                Function::Daily => "Time Series (Daily)".to_string(),
+                Function::Weekly => "Weekly Time Series".to_string(),
+                Function::Monthly => "Monthly Time Series".to_string(),
+                Function::DailyAdjusted => "Time Series (Daily)".to_string(),
+                Function::WeeklyAdjusted => "Weekly Adjusted Time Series".to_string(),
+                Function::MonthlyAdjusted => "Monthly Adjusted Time Series".to_string()
+            };
 
         let mut entries: Vec<Entry> = vec![];
 
-        for (d, v) in time_series.iter() {
-            let date = parse_date(d, time_zone)?;
-            let entry = Entry {
-                date: tz_datetime_to_fixed_offset_datetime(date),
-                open: v.open,
-                high: v.high,
-                low: v.low,
-                close: v.close,
-                volume: v.volume,
-            };
-            entries.push(entry);
+        match helper {
+            TimeSeriesHelperEnum::Adjusted(h) => {
+                let time_series_map = h
+                .time_series
+                .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
+        
+                let time_series = time_series_map
+                    .get(&time_series_key)
+                    .ok_or_else(|| Error::ParsingError("missing requested time series".into()))?;
+        
+                for (d, v) in time_series.iter() {
+                    let date = tz_datetime_to_fixed_offset_datetime(parse_date(d, time_zone)?);
+                    let entry = Entry {
+                        date,
+                        open: v.open,
+                        high: v.high,
+                        low: v.low,
+                        close: v.close,
+                        volume: v.volume,
+                        adjusted_close: Some(v.adjusted_close),
+                        dividend_amount: Some(v.dividend_amount),
+                        split_coefficient: Some(v.split_coefficient)
+                    };
+                    entries.push(entry);
+                }
+            },
+            TimeSeriesHelperEnum::Regular(h) => {
+                let time_series_map = h
+                .time_series
+                .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
+        
+                let time_series = time_series_map
+                    .get(&time_series_key)
+                    .ok_or_else(|| Error::ParsingError("missing requested time series".into()))?;
+        
+                for (d, v) in time_series.iter() {
+                    let date = tz_datetime_to_fixed_offset_datetime(parse_date(d, time_zone)?);
+                    let entry = Entry {
+                        date,
+                        open: v.open,
+                        high: v.high,
+                        low: v.low,
+                        close: v.close,
+                        volume: v.volume,
+                        adjusted_close: None,
+                        dividend_amount: None,
+                        split_coefficient: None
+                    };
+                    entries.push(entry);
+                }
+            }
         }
 
         entries.sort_by_key(|e| e.date);
@@ -143,6 +196,9 @@ mod tests {
                 low: 100.3850,
                 close: 100.4550,
                 volume: 67726,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
         assert_eq!(
@@ -153,7 +209,10 @@ mod tests {
                 high: 100.8100,
                 low: 100.5900,
                 close: 100.7900,
-                volume: 4129781
+                volume: 4129781,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
     }
@@ -173,6 +232,9 @@ mod tests {
                 low: 88.7500,
                 close: 90.1400,
                 volume: 24659472,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
         assert_eq!(
@@ -184,6 +246,9 @@ mod tests {
                 low: 100.5400,
                 close: 101.6300,
                 volume: 22165128,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
     }
@@ -203,6 +268,9 @@ mod tests {
                 low: 101.5000,
                 close: 112.2500,
                 volume: 157400000,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
         assert_eq!(
@@ -214,6 +282,9 @@ mod tests {
                 low: 100.3800,
                 close: 101.6300,
                 volume: 122316267,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
     }
@@ -233,6 +304,9 @@ mod tests {
                 low: 88.1200,
                 close: 89.3700,
                 volume: 667243800,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
         assert_eq!(
@@ -244,6 +318,9 @@ mod tests {
                 low: 99.1700,
                 close: 101.6300,
                 volume: 150971891,
+                adjusted_close: None,
+                dividend_amount: None,
+                split_coefficient: None
             }
         );
     }

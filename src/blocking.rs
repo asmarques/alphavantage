@@ -85,6 +85,60 @@ impl Client {
         self.get_time_series(&function, symbol, time_series::OutputSize::Full)
     }
 
+    /// Retrieve daily adjusted time series for the specified `symbol` (latest 100 data points).
+    pub fn get_time_series_daily_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        let function = time_series::Function::DailyAdjusted;
+        self.get_time_series(&function, symbol, time_series::OutputSize::Compact)
+    }
+
+    /// Retrieve daily adjusted time series for the specified `symbol` (full data set).
+    pub fn get_time_series_daily_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        let function = time_series::Function::DailyAdjusted;
+        self.get_time_series(&function, symbol, time_series::OutputSize::Full)
+    }
+
+    /// Retrieve weekly adjusted time series for the specified `symbol` (latest 100 data points).
+    pub fn get_time_series_weekly_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        let function = time_series::Function::WeeklyAdjusted;
+        self.get_time_series(&function, symbol, time_series::OutputSize::Compact)
+    }
+
+    /// Retrieve weekly adjusted time series for the specified `symbol` (full data set).
+    pub fn get_time_series_weekly_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        let function = time_series::Function::WeeklyAdjusted;
+        self.get_time_series(&function, symbol, time_series::OutputSize::Full)
+    }
+
+    /// Retrieve monthly adjusted time series for the specified `symbol` (latest 100 data points).
+    pub fn get_time_series_monthly_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        let function = time_series::Function::MonthlyAdjusted;
+        self.get_time_series(&function, symbol, time_series::OutputSize::Compact)
+    }
+
+    /// Retrieve monthly adjusted time series for the specified `symbol` (full data set).
+    pub fn get_time_series_monthly_adjusted_full(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        let function = time_series::Function::MonthlyAdjusted;
+        self.get_time_series(&function, symbol, time_series::OutputSize::Full)
+    }
+
     /// Retrieve the exchange rate from the currency specified by `from_currency_code` to the
     /// currency specified by `to_currency_code`.
     pub fn get_exchange_rate(
