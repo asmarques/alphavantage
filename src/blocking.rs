@@ -103,15 +103,6 @@ impl Client {
         self.get_time_series(&function, symbol, time_series::OutputSize::Full)
     }
 
-    /// Retrieve weekly adjusted time series for the specified `symbol` (latest 100 data points).
-    pub fn get_time_series_weekly_adjusted(
-        &self,
-        symbol: &str,
-    ) -> Result<time_series::TimeSeries, Error> {
-        let function = time_series::Function::WeeklyAdjusted;
-        self.get_time_series(&function, symbol, time_series::OutputSize::Compact)
-    }
-
     /// Retrieve weekly adjusted time series for the specified `symbol` (full data set).
     pub fn get_time_series_weekly_adjusted_full(
         &self,
@@ -119,15 +110,6 @@ impl Client {
     ) -> Result<time_series::TimeSeries, Error> {
         let function = time_series::Function::WeeklyAdjusted;
         self.get_time_series(&function, symbol, time_series::OutputSize::Full)
-    }
-
-    /// Retrieve monthly adjusted time series for the specified `symbol` (latest 100 data points).
-    pub fn get_time_series_monthly_adjusted(
-        &self,
-        symbol: &str,
-    ) -> Result<time_series::TimeSeries, Error> {
-        let function = time_series::Function::MonthlyAdjusted;
-        self.get_time_series(&function, symbol, time_series::OutputSize::Compact)
     }
 
     /// Retrieve monthly adjusted time series for the specified `symbol` (full data set).

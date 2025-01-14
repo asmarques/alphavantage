@@ -324,4 +324,112 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn parse_daily_adjusted() {
+        let data: &[u8] = include_bytes!("../../tests/json/time_series_daily_adjusted.json");
+        let time_series = parser::parse(&Function::DailyAdjusted, BufReader::new(data))
+            .expect("failed to parse entries");
+        assert_eq!(time_series.entries.len(), 100);
+        assert_eq!(
+            time_series.entries[0],
+            Entry {
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2024-08-20", Eastern).unwrap()),
+                open: 194.59,
+                high: 196.21,
+                low: 193.75,
+                close: 196.03,
+                volume: 1790371,
+                adjusted_close: Some(194.489652284383),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+        assert_eq!(
+            time_series.entries[1],
+            Entry {
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2024-08-21", Eastern).unwrap()),
+                open: 195.97,
+                high: 197.33,
+                low: 194.115,
+                close: 197.21,
+                volume: 2579343,
+                adjusted_close: Some(195.660380181621),
+                dividend_amount: Some(0.0),
+                split_coefficient: Some(1.0)
+            }
+        );
+    }
+
+    #[test]
+    fn parse_weekly_adjusted() {
+        let data: &[u8] = include_bytes!("../../tests/json/time_series_weekly_adjusted.json");
+        let time_series = parser::parse(&Function::WeeklyAdjusted, BufReader::new(data))
+            .expect("failed to parse entries");
+        assert_eq!(time_series.entries.len(), 16);
+        assert_eq!(
+            time_series.entries[1],
+            Entry {
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2024-10-11", Eastern).unwrap()),
+                open: 225.3800,
+                high: 235.8300,
+                low: 225.0200,
+                close: 233.2600,
+                volume: 18398213,
+                adjusted_close: Some(231.4271),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+        assert_eq!(
+            time_series.entries[0],
+            Entry {
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2024-10-04", Eastern).unwrap()),
+                open: 220.6500,
+                high: 226.0800,
+                low: 215.7980,
+                close: 226.0000,
+                volume: 17778630,
+                adjusted_close: Some(224.2242),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+    }
+
+    #[test]
+    fn parse_monthly_adjusted() {
+        let data: &[u8] = include_bytes!("../../tests/json/time_series_monthly_adjusted.json");
+        let time_series = parser::parse(&Function::MonthlyAdjusted, BufReader::new(data))
+            .expect("failed to parse entries");
+        assert_eq!(time_series.entries.len(), 11);
+        assert_eq!(
+            time_series.entries[0],
+            Entry {
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2024-03-28", Eastern).unwrap()),
+                open: 185.4900,
+                high: 199.1800,
+                low: 185.1800,
+                close: 190.9600,
+                volume: 99921776,
+                adjusted_close: Some(185.9534),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+        assert_eq!(
+            time_series.entries[1],
+            Entry {
+                date: tz_datetime_to_fixed_offset_datetime(parse_date("2024-04-30", Eastern).unwrap()),
+                open: 190.0000,
+                high: 193.2800,
+                low: 165.2605,
+                close: 166.2000,
+                volume: 98297181,
+                adjusted_close: Some(161.8426),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+    }
 }

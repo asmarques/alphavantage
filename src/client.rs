@@ -1,7 +1,7 @@
 use crate::api::{APIRequest, APIRequestBuilder};
 use crate::error::Error;
-use crate::{exchange_rate, tickers};
 use crate::time_series;
+use crate::{exchange_rate, tickers};
 use std::io::Cursor;
 use std::io::Read;
 
@@ -139,6 +139,19 @@ impl Client {
         .await
     }
 
+    /// Retrieve daily adjusted time series for the specified `symbol` (latest 100 data points).
+    pub async fn get_time_series_daily_adjusted(
+        &self,
+        symbol: &str,
+    ) -> Result<time_series::TimeSeries, Error> {
+        self.get_time_series(
+            &time_series::Function::DailyAdjusted,
+            symbol,
+            time_series::OutputSize::Compact,
+        )
+        .await
+    }
+
     /// Retrieve weekly adjusted time series for the specified `symbol` (latest 100 data points).
     pub async fn get_time_series_weekly_adjusted_full(
         &self,
@@ -165,45 +178,6 @@ impl Client {
         .await
     }
 
-    /// Retrieve daily adjusted time series for the specified `symbol` (latest 100 data points).
-    pub async fn get_time_series_daily_adjusted(
-        &self,
-        symbol: &str,
-    ) -> Result<time_series::TimeSeries, Error> {
-        self.get_time_series(
-            &time_series::Function::DailyAdjusted,
-            symbol,
-            time_series::OutputSize::Compact,
-        )
-        .await
-    }
-
-    /// Retrieve weekly adjusted time series for the specified `symbol` (latest 100 data points).
-    pub async fn get_time_series_weekly_adjusted(
-        &self,
-        symbol: &str,
-    ) -> Result<time_series::TimeSeries, Error> {
-        self.get_time_series(
-            &time_series::Function::WeeklyAdjusted,
-            symbol,
-            time_series::OutputSize::Compact,
-        )
-        .await
-    }
-
-    /// Retrieve monthly adjusted time series for the specified `symbol` (latest 100 data points).
-    pub async fn get_time_series_monthly_adjusted(
-        &self,
-        symbol: &str,
-    ) -> Result<time_series::TimeSeries, Error> {
-        self.get_time_series(
-            &time_series::Function::MonthlyAdjusted,
-            symbol,
-            time_series::OutputSize::Compact,
-        )
-        .await
-    }
-
     /// Retrieve the exchange rate from the currency specified by `from_currency_code` to the
     /// currency specified by `to_currency_code`.
     pub async fn get_exchange_rate(
@@ -223,10 +197,7 @@ impl Client {
     }
 
     /// Retrieve a list of ticker symbols that match the specified `query`.
-    pub async fn get_tickers(
-        &self,
-        query: &str,
-    ) -> Result<tickers::SearchResults, Error> {
+    pub async fn get_tickers(&self, query: &str) -> Result<tickers::SearchResults, Error> {
         let function = "SYMBOL_SEARCH";
         let params = vec![("keywords", query)];
         let request = self.builder.create(function, &params);

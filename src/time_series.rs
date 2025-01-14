@@ -90,7 +90,7 @@ pub(crate) enum Function {
     Monthly,
     DailyAdjusted,
     WeeklyAdjusted,
-    MonthlyAdjusted
+    MonthlyAdjusted,
 }
 
 impl From<&'_ Function> for &'static str {
@@ -120,7 +120,7 @@ pub(crate) mod parser {
         Adjusted(TimeSeriesHelper<EntryHelperAdjusted>),
         Regular(TimeSeriesHelper<EntryHelper>),
     }
-    
+
     impl TimeSeriesHelperEnum {
         pub(crate) fn error(&self) -> Option<&String> {
             match self {
@@ -128,7 +128,7 @@ pub(crate) mod parser {
                 TimeSeriesHelperEnum::Regular(helper) => helper.error.as_ref(),
             }
         }
-    
+
         pub(crate) fn metadata(&self) -> Option<&HashMap<String, String>> {
             match self {
                 TimeSeriesHelperEnum::Adjusted(helper) => helper.metadata.as_ref(),
@@ -136,7 +136,6 @@ pub(crate) mod parser {
             }
         }
     }
-    
 
     #[derive(Debug, Deserialize)]
     pub(crate) struct EntryHelper {
@@ -168,8 +167,16 @@ pub(crate) mod parser {
         pub volume: u64,
         #[serde(rename = "7. dividend amount", deserialize_with = "from_str")]
         pub dividend_amount: f64,
-        #[serde(rename = "8. split coefficient", deserialize_with = "from_str")]
+        #[serde(
+            rename = "8. split coefficient",
+            default = "default_split_coefficient",
+            deserialize_with = "from_str"
+        )]
         pub split_coefficient: f64,
+    }
+
+    fn default_split_coefficient() -> f64 {
+        1.0
     }
 
     #[derive(Debug, Deserialize)]
@@ -183,10 +190,10 @@ pub(crate) mod parser {
     }
 
     pub(crate) fn parse(function: &Function, reader: impl Read) -> Result<TimeSeries, Error> {
-        
         let helper = match function {
             Function::DailyAdjusted | Function::WeeklyAdjusted | Function::MonthlyAdjusted => {
-                let helper: TimeSeriesHelper<EntryHelperAdjusted> = serde_json::from_reader(reader)?;
+                let helper: TimeSeriesHelper<EntryHelperAdjusted> =
+                    serde_json::from_reader(reader)?;
                 TimeSeriesHelperEnum::Adjusted(helper)
             }
             _ => {
@@ -211,7 +218,10 @@ pub(crate) mod parser {
         let time_zone_key = match function {
             Function::IntraDay(_) => "6. Time Zone",
             Function::Daily | Function::DailyAdjusted => "5. Time Zone",
-            Function::Weekly | Function::Monthly | Function::WeeklyAdjusted | Function::MonthlyAdjusted => "4. Time Zone",
+            Function::Weekly
+            | Function::Monthly
+            | Function::WeeklyAdjusted
+            | Function::MonthlyAdjusted => "4. Time Zone",
         };
 
         let time_zone: Tz = metadata
@@ -232,22 +242,21 @@ pub(crate) mod parser {
             Function::Monthly => "Monthly Time Series".to_string(),
             Function::DailyAdjusted => "Time Series (Daily)".to_string(),
             Function::WeeklyAdjusted => "Weekly Adjusted Time Series".to_string(),
-            Function::MonthlyAdjusted => "Monthly Adjusted Time Series".to_string()
+            Function::MonthlyAdjusted => "Monthly Adjusted Time Series".to_string(),
         };
 
-        
         let mut entries: Vec<Entry> = vec![];
 
         match helper {
             TimeSeriesHelperEnum::Adjusted(h) => {
                 let time_series_map = h
-                .time_series
-                .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
-        
+                    .time_series
+                    .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
+
                 let time_series = time_series_map
                     .get(&time_series_key)
                     .ok_or_else(|| Error::ParsingError("missing requested time series".into()))?;
-        
+
                 for (d, v) in time_series.iter() {
                     let date = parse_date(d, time_zone)?;
                     let entry = Entry {
@@ -259,20 +268,20 @@ pub(crate) mod parser {
                         volume: v.volume,
                         adjusted_close: Some(v.adjusted_close),
                         dividend_amount: Some(v.dividend_amount),
-                        split_coefficient: Some(v.split_coefficient)
+                        split_coefficient: Some(v.split_coefficient),
                     };
                     entries.push(entry);
                 }
-            },
+            }
             TimeSeriesHelperEnum::Regular(h) => {
                 let time_series_map = h
-                .time_series
-                .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
-        
+                    .time_series
+                    .ok_or_else(|| Error::ParsingError("missing time series".into()))?;
+
                 let time_series = time_series_map
                     .get(&time_series_key)
                     .ok_or_else(|| Error::ParsingError("missing requested time series".into()))?;
-        
+
                 for (d, v) in time_series.iter() {
                     let date = parse_date(d, time_zone)?;
                     let entry = Entry {
@@ -284,7 +293,7 @@ pub(crate) mod parser {
                         volume: v.volume,
                         adjusted_close: None,
                         dividend_amount: None,
-                        split_coefficient: None
+                        split_coefficient: None,
                     };
                     entries.push(entry);
                 }
@@ -487,6 +496,78 @@ mod tests {
                 volume: 2579343,
                 adjusted_close: Some(195.660380181621),
                 dividend_amount: Some(0.0),
+                split_coefficient: Some(1.0)
+            }
+        );
+    }
+
+    #[test]
+    fn parse_weekly_adjusted() {
+        let data: &[u8] = include_bytes!("../tests/json/time_series_weekly_adjusted.json");
+        let time_series = parser::parse(&Function::WeeklyAdjusted, BufReader::new(data))
+            .expect("failed to parse entries");
+        assert_eq!(time_series.entries.len(), 16);
+        assert_eq!(
+            time_series.entries[1],
+            Entry {
+                date: parse_date("2024-10-11", Eastern).unwrap(),
+                open: 225.3800,
+                high: 235.8300,
+                low: 225.0200,
+                close: 233.2600,
+                volume: 18398213,
+                adjusted_close: Some(231.4271),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+        assert_eq!(
+            time_series.entries[0],
+            Entry {
+                date: parse_date("2024-10-04", Eastern).unwrap(),
+                open: 220.6500,
+                high: 226.0800,
+                low: 215.7980,
+                close: 226.0000,
+                volume: 17778630,
+                adjusted_close: Some(224.2242),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+    }
+
+    #[test]
+    fn parse_monthly_adjusted() {
+        let data: &[u8] = include_bytes!("../tests/json/time_series_monthly_adjusted.json");
+        let time_series = parser::parse(&Function::MonthlyAdjusted, BufReader::new(data))
+            .expect("failed to parse entries");
+        assert_eq!(time_series.entries.len(), 11);
+        assert_eq!(
+            time_series.entries[0],
+            Entry {
+                date: parse_date("2024-03-28", Eastern).unwrap(),
+                open: 185.4900,
+                high: 199.1800,
+                low: 185.1800,
+                close: 190.9600,
+                volume: 99921776,
+                adjusted_close: Some(185.9534),
+                dividend_amount: Some(0.0000),
+                split_coefficient: Some(1.0)
+            }
+        );
+        assert_eq!(
+            time_series.entries[1],
+            Entry {
+                date: parse_date("2024-04-30", Eastern).unwrap(),
+                open: 190.0000,
+                high: 193.2800,
+                low: 165.2605,
+                close: 166.2000,
+                volume: 98297181,
+                adjusted_close: Some(161.8426),
+                dividend_amount: Some(0.0000),
                 split_coefficient: Some(1.0)
             }
         );
